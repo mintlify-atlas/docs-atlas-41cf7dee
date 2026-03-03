@@ -1,0 +1,184 @@
+{
+  "projectType": "general",
+  "projectName": "JSON Schema",
+  "projectDescription": "A vocabulary that allows you to validate, annotate, and manipulate JSON documents",
+  "theme": "sequoia",
+  "primaryColor": "#5B4EE0",
+  "lightColor": "#7B6EF6",
+  "darkColor": "#3D2FBF",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "introduction",
+              "what-is-json-schema",
+              "getting-started"
+            ]
+          },
+          {
+            "group": "Core Specification",
+            "pages": [
+              "specification/core/overview",
+              "specification/core/definitions",
+              "specification/core/keywords",
+              "specification/core/schemas",
+              "specification/core/fragment-identifiers",
+              "specification/core/versioning"
+            ]
+          },
+          {
+            "group": "Validation Specification",
+            "pages": [
+              "specification/validation/overview",
+              "specification/validation/structural-validation",
+              "specification/validation/format",
+              "specification/validation/content",
+              "specification/validation/annotations"
+            ]
+          },
+          {
+            "group": "Advanced Concepts",
+            "pages": [
+              "concepts/keyword-behaviors",
+              "concepts/subschemas",
+              "concepts/unevaluated",
+              "concepts/output-formatting",
+              "concepts/vocabularies"
+            ]
+          },
+          {
+            "group": "Development Process",
+            "pages": [
+              "process/overview",
+              "process/feature-lifecycle",
+              "process/proposals",
+              "process/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Core Keywords",
+            "pages": [
+              "reference/core/schema",
+              "reference/core/vocabulary",
+              "reference/core/id",
+              "reference/core/ref",
+              "reference/core/defs",
+              "reference/core/comment"
+            ]
+          },
+          {
+            "group": "Applicator Keywords",
+            "pages": [
+              "reference/applicator/allof",
+              "reference/applicator/anyof",
+              "reference/applicator/oneof",
+              "reference/applicator/not",
+              "reference/applicator/if-then-else",
+              "reference/applicator/properties",
+              "reference/applicator/items",
+              "reference/applicator/contains"
+            ]
+          },
+          {
+            "group": "Validation Keywords",
+            "pages": [
+              "reference/validation/type",
+              "reference/validation/enum",
+              "reference/validation/const",
+              "reference/validation/string",
+              "reference/validation/numeric",
+              "reference/validation/array",
+              "reference/validation/object"
+            ]
+          },
+          {
+            "group": "Meta-Data",
+            "pages": [
+              "reference/metadata/title",
+              "reference/metadata/description",
+              "reference/metadata/examples",
+              "reference/metadata/default",
+              "reference/metadata/deprecated",
+              "reference/metadata/readonly-writeonly"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Community",
+        "groups": [
+          {
+            "group": "Get Involved",
+            "pages": [
+              "community/overview",
+              "community/contributing",
+              "community/code-of-conduct",
+              "community/support"
+            ]
+          },
+          {
+            "group": "Architecture Decisions",
+            "pages": [
+              "adr/overview",
+              "adr/stable-spec",
+              "adr/decouple-from-ietf"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/test-suite",
+              "resources/implementations",
+              "resources/tools"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "JSON document validation",
+    "Schema annotation capabilities",
+    "Extensible vocabularies",
+    "Multiple validation keywords",
+    "Format validation",
+    "Structural constraints",
+    "Meta-schema definitions",
+    "Subschema application",
+    "URI-based schema references",
+    "Standardized specification process"
+  ],
+  "publicApiSurface": [
+    "$schema - Declares JSON Schema version",
+    "$id - Schema identifier URI",
+    "$ref - Reference to schema",
+    "$defs - Schema definitions",
+    "$vocabulary - Declares vocabularies",
+    "type - Specifies instance type",
+    "properties - Object properties validation",
+    "items - Array items validation",
+    "required - Required property names",
+    "enum - Enumerated values",
+    "const - Constant value",
+    "pattern - String pattern matching",
+    "minimum/maximum - Numeric bounds",
+    "minLength/maxLength - String length constraints",
+    "allOf/anyOf/oneOf - Combining schemas",
+    "not - Negation schema",
+    "if/then/else - Conditional schemas",
+    "format - Semantic string format",
+    "contains - Array containment",
+    "dependentSchemas - Schema dependencies",
+    "unevaluatedProperties - Unevaluated handling",
+    "title/description - Metadata annotations"
+  ]
+}
