@@ -1,0 +1,325 @@
+---
+title: Applying Subschemas
+description: How JSON Schema applies and combines subschemas to validate complex data structures
+---
+
+JSON Schema allows you to build complex validation logic by combining multiple schemas. This document explains how subschemas are defined, applied, and combined.
+
+## Schema Nesting
+
+Some keywords take schemas themselves, allowing JSON Schemas to be nested:
+
+```json
+{
+  "title": "root",
+  "items": {
+    "title": "array item"
+  }
+}
+```
+
+In this example, the schema titled "array item" is a **subschema**, and the schema titled "root" is the **root schema**.
+
+As with the root schema, a subschema is either an object or a boolean.
+
+## In-Place Application
+
+These keywords apply subschemas to the same location in the instance as the parent schema is being applied.
+
+<Note>
+Subschemas of these keywords evaluate the instance completely independently. The results of one subschema must not impact the results of sibling subschemas. Therefore subschemas may be applied in any order.
+</Note>
+
+### Logical Operators
+
+These keywords correspond to logical operators for combining or modifying boolean assertion results:
+
+#### allOf
+
+The value must be a non-empty array of valid JSON Schemas. An instance validates successfully if it validates successfully against **all** schemas defined by this keyword.
+
+```json
+{
+  "allOf": [
+    { "type": "string" },
+    { "minLength": 5 }
+  ]
+}
+```
+
+#### anyOf
+
+The value must be a non-empty array of valid JSON Schemas. An instance validates successfully if it validates successfully against **at least one** schema.
+
+```json
+{
+  "anyOf": [
+    { "type": "string" },
+    { "type": "number" }
+  ]
+}
+```
+
+<Info>
+When annotations are being collected, all subschemas must be examined so that annotations are collected from each subschema that validates successfully.
+</Info>
+
+#### oneOf
+
+The value must be a non-empty array of valid JSON Schemas. An instance validates successfully if it validates against **exactly one** schema.
+
+```json
+{
+  "oneOf": [
+    { "type": "number", "multipleOf": 5 },
+    { "type": "number", "multipleOf": 3 }
+  ]
+}
+```
+
+#### not
+
+The value must be a valid JSON Schema. An instance is valid if it **fails** to validate successfully against the schema.
+
+```json
+{
+  "not": { "type": "string" }
+}
+```
+
+### Conditional Application
+
+These keywords work together to implement conditional application of subschemas.
+
+<Warning>
+`if`, `then`, and `else` must not interact with each other across subschema boundaries. An `if` in one branch of an `allOf` must not impact a `then` or `else` in another branch.
+</Warning>
+
+#### if / then / else
+
+```json
+{
+  "if": {
+    "properties": {
+      "country": { "const": "USA" }
+    }
+  },
+  "then": {
+    "properties": {
+      "postalCode": { "pattern": "[0-9]{5}(-[0-9]{4})?" }
+    }
+  },
+  "else": {
+    "properties": {
+      "postalCode": { "pattern": "[A-Z][0-9][A-Z] [0-9][A-Z][0-9]" }
+    }
+  }
+}
+```
+
+The validation outcome of `if` has no direct effect on the overall validation result. Rather, it controls which of the `then` or `else` keywords are evaluated.
+
+<Note>
+There is no default behavior for `if`, `then`, or `else` when they are not present. They must not be treated as if present with an empty schema.
+</Note>
+
+#### dependentSchemas
+
+This keyword specifies subschemas that are evaluated if the instance is an object and contains a certain property.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "credit_card": { "type": "number" }
+  },
+  "dependentSchemas": {
+    "credit_card": {
+      "properties": {
+        "billing_address": { "type": "string" }
+      },
+      "required": ["billing_address"]
+    }
+  }
+}
+```
+
+If the object key is a property in the instance, the entire instance must validate against the subschema.
+
+## Applying Subschemas to Arrays
+
+### prefixItems
+
+The value must be a non-empty array of valid JSON Schemas. Validation succeeds if each element of the instance validates against the subschema at the same position.
+
+```json
+{
+  "prefixItems": [
+    { "type": "number" },
+    { "type": "string" },
+    { "enum": ["Street", "Avenue", "Boulevard"] }
+  ]
+}
+```
+
+This keyword produces an annotation value which is the largest index to which it applied a subschema.
+
+### items
+
+The value must be a valid JSON Schema. This keyword applies to array elements not covered by `prefixItems`.
+
+```json
+{
+  "prefixItems": [
+    { "type": "number" },
+    { "type": "string" }
+  ],
+  "items": { "type": "string" }
+}
+```
+
+If `prefixItems` does not exist within the same schema object, `items` applies its subschema to all elements.
+
+### contains
+
+The value must be a valid JSON Schema. An instance is valid if the number of elements that are valid against its subschema is within the specified range.
+
+```json
+{
+  "contains": {
+    "type": "number"
+  },
+  "minContains": 1,
+  "maxContains": 3
+}
+```
+
+The minimum defaults to 1 if `minContains` is absent. The maximum is unbounded if `maxContains` is absent.
+
+## Applying Subschemas to Objects
+
+### properties
+
+The value must be an object where each value is a valid JSON Schema. Validation succeeds if, for each name that appears in both the instance and this keyword's value, the child instance validates against the corresponding schema.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "number" }
+  }
+}
+```
+
+The annotation result is the set of instance property names which are also present under this keyword.
+
+### patternProperties
+
+The value must be an object where property names should be valid regular expressions and property values must be valid JSON Schemas.
+
+```json
+{
+  "type": "object",
+  "patternProperties": {
+    "^S_": { "type": "string" },
+    "^I_": { "type": "integer" }
+  }
+}
+```
+
+Validation succeeds if, for each instance name that matches any regular expression, the child instance validates against each corresponding schema.
+
+### additionalProperties
+
+The value must be a valid JSON Schema. This keyword applies to property values for which neither `properties` nor `patternProperties` apply.
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "number": { "type": "number" }
+  },
+  "patternProperties": {
+    "^S_": { "type": "string" }
+  },
+  "additionalProperties": false
+}
+```
+
+<Info>
+Omitting this keyword has the same assertion behavior as an empty schema, meaning additional properties are allowed by default.
+</Info>
+
+### propertyNames
+
+The value must be a valid JSON Schema. If the instance is an object, this keyword validates if every property name validates against the provided schema.
+
+```json
+{
+  "type": "object",
+  "propertyNames": {
+    "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+  }
+}
+```
+
+Note that the property name being tested will always be a string.
+
+## Schema References
+
+### $ref
+
+The `$ref` keyword is used to reference a statically identified schema. Its value must be a string which is an IRI reference.
+
+```json
+{
+  "type": "array",
+  "items": { "$ref": "#/$defs/positiveInteger" },
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "exclusiveMinimum": 0
+    }
+  }
+}
+```
+
+<Note>
+Other keywords can appear alongside `$ref` in the same schema object.
+</Note>
+
+### $defs
+
+The `$defs` keyword reserves a location for schema authors to inline re-usable JSON Schemas. The keyword does not directly affect validation.
+
+The value must be an object where each member value is a valid JSON Schema.
+
+```json
+{
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "billing_address": { "$ref": "#/$defs/address" },
+    "shipping_address": { "$ref": "#/$defs/address" }
+  }
+}
+```
+
+### $dynamicRef and $dynamicAnchor
+
+These keywords are used when the referencing schema might need to override where a reference in the referenced schema will resolve. This is useful for authoring recursive schemas that can be extended.
+
+<Warning>
+This is an advanced feature and should be used with caution.
+</Warning>
+
+Resolution of `$dynamicRef` begins by identifying the outermost schema resource in the dynamic scope which defines a matching `$dynamicAnchor`.

@@ -1,0 +1,301 @@
+---
+title: $comment
+description: Adds comments and notes to schemas for documentation and tooling
+---
+
+The `$comment` keyword reserves a location for comments from schema authors to readers or maintainers of the schema. It has no effect on validation or annotation collection.
+
+## Syntax
+
+<ParamField path="$comment" type="string" required>
+  A string containing comments, notes, or directives for humans or developer tooling.
+</ParamField>
+
+## Purpose
+
+The `$comment` keyword enables:
+
+1. **Documentation**: Explain complex schema logic or constraints
+2. **Maintenance Notes**: Leave reminders or warnings for future maintainers
+3. **Tooling Directives**: Provide instructions to linters, formatters, or other tools
+4. **Decision Rationale**: Document why certain design choices were made
+
+## Usage
+
+### Basic Documentation
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 150,
+      "$comment": "Age is capped at 150 to prevent data entry errors while allowing for exceptional cases"
+    }
+  }
+}
+```
+
+### Explaining Complex Logic
+
+```json
+{
+  "$comment": "This schema validates API responses. The 'data' field structure depends on the 'status' field value.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["success", "error"]
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "if": {
+    "properties": {
+      "status": { "const": "success" }
+    }
+  },
+  "then": {
+    "$comment": "Success responses must include result data",
+    "properties": {
+      "data": {
+        "required": ["result"]
+      }
+    }
+  },
+  "else": {
+    "$comment": "Error responses must include error details",
+    "properties": {
+      "data": {
+        "required": ["error", "message"]
+      }
+    }
+  }
+}
+```
+
+## Examples
+
+### Maintenance Notes
+
+```json
+{
+  "$comment": "WARNING: Changing this schema may break backward compatibility with v1.x clients",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "$comment": "Semantic versioning format - do not change"
+    }
+  }
+}
+```
+
+### Tooling Directives
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "legacyField": {
+      "type": "string",
+      "$comment": "eslint-disable-next-line deprecation/deprecation -- Required for backward compatibility until v3.0"
+    },
+    "internalId": {
+      "type": "string",
+      "$comment": "schema-lint-ignore: pattern-complexity -- This regex is generated from external source",
+      "pattern": "^[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{8}$"
+    }
+  }
+}
+```
+
+### Design Rationale
+
+```json
+{
+  "type": "string",
+  "minLength": 8,
+  "maxLength": 128,
+  "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[@$!%*?&])",
+  "$comment": "Password requirements based on NIST SP 800-63B guidelines. Min length increased from 6 to 8 after security audit (2024-01-15). Must contain: lowercase, uppercase, digit, and special character."
+}
+```
+
+### Temporary Notes
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["pending", "approved", "rejected"],
+      "$comment": "TODO: Add 'cancelled' status in v2.0 - see issue #123"
+    },
+    "amount": {
+      "type": "number",
+      "$comment": "FIXME: Should this be exclusive or inclusive minimum? Clarify with product team.",
+      "minimum": 0
+    }
+  }
+}
+```
+
+### Multi-line Comments
+
+```json
+{
+  "$comment": "Product Schema v2.0\n\nChanges from v1.0:\n- Added 'dimensions' field\n- Made 'description' required\n- Deprecated 'category_id' in favor of 'categories' array\n\nMigration guide: https://example.com/docs/migration-v2",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "description": { "type": "string" }
+  },
+  "required": ["name", "description"]
+}
+```
+
+## Validation and Annotation Behavior
+
+The `$comment` keyword:
+
+- **MUST NOT** affect validation results
+- **MUST NOT** be collected as an annotation  
+- **MUST NOT** influence the evaluation of any other keywords
+
+```json
+{
+  "type": "string",
+  "$comment": "This comment is ignored during validation"
+}
+```
+
+Instances are validated against `"type": "string"` only. The comment has no effect.
+
+## Tooling Integration
+
+### Linter Directives
+
+Tools may use `$comment` values as directives:
+
+```json
+{
+  "type": "object",
+  "additionalProperties": true,
+  "$comment": "schema-lint-disable: no-additional-properties -- This schema intentionally allows additional properties for extensibility"
+}
+```
+
+### Code Generation Hints
+
+```json
+{
+  "type": "string",
+  "format": "date-time",
+  "$comment": "codegen: Use java.time.Instant for this field"
+}
+```
+
+### Documentation Extraction
+
+Documentation generators might extract `$comment` values:
+
+```json
+{
+  "$comment": "@section Authentication\n@description This schema validates JWT tokens",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "$comment": "@format JWT\n@example eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+  }
+}
+```
+
+## Translation Considerations
+
+Tools that translate schemas between formats or programming languages MAY:
+
+- Convert native comments to `$comment` values
+- Convert `$comment` values to native comments  
+- Preserve both native comments and `$comment` values
+
+When both native comments and `$comment` are present, translation behavior is implementation-dependent:
+
+```javascript
+// JavaScript with native comment
+{
+  /* This is a native JavaScript comment */
+  "type": "string",
+  "$comment": "This is a JSON Schema comment"
+}
+```
+
+Implementations should document how they handle this scenario.
+
+## Best Practices
+
+### Use Description for User-Facing Text
+
+Use `description` for documentation intended for schema users, and `$comment` for internal notes:
+
+```json
+{
+  "type": "string",
+  "description": "The user's email address",
+  "$comment": "Email validation is handled by the backend - this schema only checks format",
+  "format": "email"
+}
+```
+
+### Keep Comments Concise
+
+While multi-line comments are supported, keep them focused:
+
+```json
+{
+  "$comment": "See docs/schema-design.md for full specification",
+  "type": "object"
+}
+```
+
+### Use Structured Comment Formats
+
+For tooling integration, consider structured formats:
+
+```json
+{
+  "$comment": "@deprecated 2024-03-01\n@replacement: Use 'newField' instead\n@removeIn: v3.0.0"
+}
+```
+
+## Comparison with Description
+
+| Feature | `$comment` | `description` |
+|---------|-----------|---------------|
+| **Purpose** | Internal notes, tooling directives | User-facing documentation |
+| **Validation** | No effect | No effect |
+| **Annotations** | Not collected | Collected as annotation |
+| **Audience** | Developers, tools | Schema users, API consumers |
+| **Typical content** | TODOs, warnings, technical notes | Field purpose, expected values |
+
+```json
+{
+  "type": "string",
+  "description": "Customer's email address for order notifications",
+  "$comment": "TODO: Add validation for disposable email domains",
+  "format": "email"
+}
+```
+
+## Related Keywords
+
+- `description` - User-facing documentation (produces annotations)
+- `title` - Short schema title (produces annotations)  
+- `examples` - Example valid instances (produces annotations)

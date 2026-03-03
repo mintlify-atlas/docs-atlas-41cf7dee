@@ -1,0 +1,243 @@
+---
+title: oneOf
+description: Validate against exactly one of the specified schemas
+---
+
+The `oneOf` keyword validates an instance against exactly one schema from its array value. This enforces mutual exclusivity between schema alternatives.
+
+## Syntax
+
+```json
+{
+  "oneOf": [
+    { /* schema 1 */ },
+    { /* schema 2 */ },
+    { /* schema 3 */ }
+  ]
+}
+```
+
+The value must be a non-empty array where each item is a valid JSON Schema.
+
+## Behavior
+
+An instance validates successfully against `oneOf` if it validates successfully against **exactly one** schema in the array.
+
+- All subschemas are evaluated independently
+- Exactly one subschema must succeed
+- If zero or more than one subschema succeeds, the entire `oneOf` fails
+- This enforces mutual exclusivity between alternatives
+
+## Examples
+
+### Discriminated Types
+
+Require objects with mutually exclusive type indicators:
+
+```json
+{
+  "oneOf": [
+    {
+      "properties": {
+        "type": { "const": "circle" },
+        "radius": { "type": "number" }
+      },
+      "required": ["type", "radius"]
+    },
+    {
+      "properties": {
+        "type": { "const": "rectangle" },
+        "width": { "type": "number" },
+        "height": { "type": "number" }
+      },
+      "required": ["type", "width", "height"]
+    }
+  ]
+}
+```
+
+Valid instances:
+```json
+{ "type": "circle", "radius": 5 }
+{ "type": "rectangle", "width": 10, "height": 20 }
+```
+
+Invalid:
+```json
+{ "type": "circle", "radius": 5, "width": 10 }
+```
+(Would match both schemas if we used `anyOf`)
+
+### Exclusive Number Ranges
+
+Require numbers in one of several non-overlapping ranges:
+
+```json
+{
+  "type": "number",
+  "oneOf": [
+    {
+      "minimum": 0,
+      "exclusiveMaximum": 10
+    },
+    {
+      "minimum": 10,
+      "exclusiveMaximum": 20
+    },
+    {
+      "minimum": 20,
+      "maximum": 30
+    }
+  ]
+}
+```
+
+Valid: `5`, `15`, `25`  
+Invalid: `10` (matches two schemas), `-5`, `35`
+
+### Version-Specific Schemas
+
+Enforce different schemas based on version field:
+
+```json
+{
+  "oneOf": [
+    {
+      "properties": {
+        "version": { "const": 1 },
+        "data": { "type": "string" }
+      },
+      "required": ["version", "data"]
+    },
+    {
+      "properties": {
+        "version": { "const": 2 },
+        "data": {
+          "type": "object",
+          "properties": {
+            "content": { "type": "string" },
+            "encoding": { "type": "string" }
+          }
+        }
+      },
+      "required": ["version", "data"]
+    }
+  ]
+}
+```
+
+Valid instances:
+```json
+{ "version": 1, "data": "plain text" }
+{ "version": 2, "data": { "content": "base64", "encoding": "utf-8" } }
+```
+
+### Payment Method Selection
+
+Require exactly one payment method:
+
+```json
+{
+  "type": "object",
+  "oneOf": [
+    {
+      "properties": {
+        "creditCard": {
+          "type": "object",
+          "properties": {
+            "number": { "type": "string" },
+            "cvv": { "type": "string" }
+          },
+          "required": ["number", "cvv"]
+        }
+      },
+      "required": ["creditCard"]
+    },
+    {
+      "properties": {
+        "bankAccount": {
+          "type": "object",
+          "properties": {
+            "accountNumber": { "type": "string" },
+            "routingNumber": { "type": "string" }
+          },
+          "required": ["accountNumber", "routingNumber"]
+        }
+      },
+      "required": ["bankAccount"]
+    },
+    {
+      "properties": {
+        "paypal": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string", "format": "email" }
+          },
+          "required": ["email"]
+        }
+      },
+      "required": ["paypal"]
+    }
+  ]
+}
+```
+
+Valid: Object with exactly one payment method  
+Invalid: Object with zero or multiple payment methods
+
+### Boolean XOR Logic
+
+Implement exclusive-OR behavior:
+
+```json
+{
+  "type": "object",
+  "oneOf": [
+    {
+      "required": ["email"],
+      "not": { "required": ["phone"] }
+    },
+    {
+      "required": ["phone"],
+      "not": { "required": ["email"] }
+    }
+  ]
+}
+```
+
+Valid:
+```json
+{ "email": "user@example.com" }
+{ "phone": "+1-555-0123" }
+```
+
+Invalid:
+```json
+{}
+{ "email": "user@example.com", "phone": "+1-555-0123" }
+```
+
+## Common Use Cases
+
+- **Discriminated unions**: Enforce mutually exclusive object types
+- **Non-overlapping ranges**: Validate values in exclusive ranges
+- **Single selection**: Require exactly one option from a set
+- **Version enforcement**: Apply different schemas based on version
+- **API variants**: Support different but exclusive API formats
+
+## Comparison with Other Keywords
+
+| Keyword | Required Matches | Use Case |
+|---------|-----------------|----------|
+| `allOf` | All schemas | Combine constraints |
+| `anyOf` | At least one | Union types |
+| `oneOf` | Exactly one | Exclusive choice |
+
+## Notes
+
+- Unlike `anyOf`, validation fails if more than one subschema matches
+- This can catch unintended overlaps in schema design
+- Performance consideration: all subschemas must be evaluated to count matches
+- Nested `oneOf` can lead to exponential evaluation paths
+- Empty arrays are not permitted
+- Use discriminator fields (like `type` or `version`) to make schemas truly exclusive

@@ -1,0 +1,187 @@
+---
+title: description
+description: Provide detailed explanations about the purpose and usage of data described by a schema
+---
+
+The `description` keyword provides a detailed, human-readable explanation of the schema. It is used to document the purpose and usage of the data described by the schema.
+
+## Syntax
+
+The value of `description` must be a string.
+
+```json
+{
+  "description": "string"
+}
+```
+
+## Purpose
+
+The `description` keyword is a metadata annotation that:
+
+- Provides detailed explanation about the purpose of the instance described by the schema
+- Enhances documentation with contextual information
+- Helps developers understand the intended use of data fields
+- Can be displayed in user interfaces to guide users
+- Has no effect on validation (it is purely informational)
+
+A description provides comprehensive explanation, whereas a `title` is preferably short and concise.
+
+## Examples
+
+### Basic Usage
+
+```json
+{
+  "type": "string",
+  "title": "Email",
+  "description": "The user's primary email address used for account notifications and password recovery",
+  "format": "email"
+}
+```
+
+This schema includes both a short title and a detailed description explaining the purpose of the email field.
+
+### Complex Object Documentation
+
+```json
+{
+  "type": "object",
+  "title": "User Account",
+  "description": "Represents a user account in the system. Each account must have a unique email address and username. Accounts can be created via the registration API or imported from external identity providers.",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "Unique username for the account. Must be 3-20 characters long and contain only alphanumeric characters, hyphens, and underscores.",
+      "minLength": 3,
+      "maxLength": 20,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "email": {
+      "type": "string",
+      "description": "Primary email address. Must be unique across all accounts. Used for login and account recovery.",
+      "format": "email"
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "Timestamp indicating when the account was created, in ISO 8601 format",
+      "format": "date-time"
+    }
+  },
+  "required": ["username", "email"]
+}
+```
+
+Detailed descriptions help developers understand business rules and constraints for each field.
+
+### API Endpoint Parameter
+
+```json
+{
+  "type": "integer",
+  "title": "Page Size",
+  "description": "Number of items to return per page. Default is 20. Maximum allowed value is 100 to prevent excessive load on the server.",
+  "minimum": 1,
+  "maximum": 100,
+  "default": 20
+}
+```
+
+The description explains both the purpose and the reasoning behind the constraints.
+
+### Configuration Schema
+
+```json
+{
+  "type": "object",
+  "title": "Database Configuration",
+  "description": "Configuration options for database connection pooling and timeout settings",
+  "properties": {
+    "maxConnections": {
+      "type": "integer",
+      "description": "Maximum number of concurrent database connections in the pool. Higher values allow more concurrent requests but consume more memory. Recommended range is 10-50 for most applications.",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20
+    },
+    "connectionTimeout": {
+      "type": "integer",
+      "description": "Maximum time in milliseconds to wait for a connection from the pool before timing out. If all connections are busy and this timeout is reached, the request will fail.",
+      "minimum": 1000,
+      "default": 30000
+    },
+    "idleTimeout": {
+      "type": "integer",
+      "description": "Time in milliseconds that a connection can remain idle in the pool before being closed. Set to 0 to disable idle timeout.",
+      "minimum": 0,
+      "default": 600000
+    }
+  }
+}
+```
+
+Descriptions provide operational context and best practices for configuration values.
+
+### Validation Rules Documentation
+
+```json
+{
+  "type": "string",
+  "title": "Product SKU",
+  "description": "Stock Keeping Unit identifier following the format: [CATEGORY]-[SUBCATEGORY]-[ITEM_NUMBER]. Example: ELEC-COMP-00123 for electronics/computers/item 123. Must be unique across all products.",
+  "pattern": "^[A-Z]{4}-[A-Z]{4}-\\d{5}$"
+}
+```
+
+The description explains the format pattern in human-readable terms with examples.
+
+### Enum Values Explanation
+
+```json
+{
+  "type": "string",
+  "title": "Order Status",
+  "description": "Current status of the order in the fulfillment pipeline. Orders progress from 'pending' to 'processing' to 'shipped' to 'delivered'. Orders can be 'cancelled' at any stage before shipping.",
+  "enum": ["pending", "processing", "shipped", "delivered", "cancelled"]
+}
+```
+
+The description provides workflow context for the enumerated values.
+
+## Best Practices
+
+### Include Usage Context
+
+Good descriptions explain not just what the field is, but how it's used:
+
+```json
+{
+  "type": "boolean",
+  "title": "Email Notifications",
+  "description": "Enable or disable email notifications for this user. When enabled, the user will receive emails for account activities, security alerts, and promotional messages based on their notification preferences.",
+  "default": true
+}
+```
+
+### Document Defaults and Edge Cases
+
+```json
+{
+  "type": "number",
+  "title": "Discount Percentage",
+  "description": "Percentage discount to apply to the order total. Must be between 0 and 100. A value of 0 means no discount. Discounts are applied before tax calculation.",
+  "minimum": 0,
+  "maximum": 100
+}
+```
+
+### Provide Examples When Helpful
+
+```json
+{
+  "type": "string",
+  "title": "Phone Number",
+  "description": "International phone number in E.164 format, including country code. Examples: +14155552671 (US), +442071234567 (UK), +81312345678 (Japan)",
+  "pattern": "^\\+[1-9]\\d{1,14}$"
+}
+```

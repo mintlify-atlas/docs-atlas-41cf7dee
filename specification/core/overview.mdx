@@ -1,0 +1,124 @@
+---
+title: Core Specification Overview
+description: Introduction to the JSON Schema core specification, defining the fundamental concepts and architecture of the language
+---
+
+## Introduction
+
+JSON Schema is a domain-specific, declarative language for validating and annotating JSON documents. While JSON itself is excellent for data exchange, it lacks a native mechanism for formally describing its structure and constraints. JSON Schema fills this gap by providing a standardized way to define contracts for JSON-based APIs and data formats.
+
+JSON Schema can be represented as a JSON document itself, making it easily portable and machine-readable. It draws inspiration from the architecture of the World Wide Web, including concepts such as URIs for identifying and linking schemas.
+
+## Primary Purposes
+
+A JSON Schema serves as a contract for data, primarily designed for two purposes:
+
+- **Validation**: Ensures that a JSON instance conforms to a specific structure and set of constraints
+- **Annotation**: Attaches metadata to values in a JSON document, which can be used by applications in various ways
+
+JSON Schema can also be used for documentation generation, HTML form builders, and type code generation. Although not specifically designed for those tasks, JSON Schema can be extended to fill any gaps required to support these secondary uses.
+
+## Specification Structure
+
+The JSON Schema specification is defined in a series of documents:
+
+- **Core specification**: Defines the fundamental keywords and concepts (this document)
+- **Validation specification**: Provides keywords for common validation use cases
+- **Related specifications**: Additional vocabularies or features for specific use cases
+
+This Core specification defines:
+
+1. **Essential keywords**: A set of core keywords prefixed with `$` that MUST be supported by any implementation
+2. **Applicator keywords**: A RECOMMENDED set of keywords for conditionally applying subschemas and for applying subschemas to the contents of objects and arrays
+
+<Note>
+Core keywords beginning with a dollar sign (`$`) are essential to processing JSON Schema and cannot be disabled. These keywords are necessary to navigate and process any schema.
+</Note>
+
+## How JSON Schema Works
+
+A JSON Schema represents a set of constraints and annotations applied to a JSON value using "keywords". A JSON value is considered valid against a schema if it satisfies the constraint defined by every keyword in that schema.
+
+### Recursive Evaluation
+
+Schema evaluation is a recursive process. Some keywords contain one or more subschemas, which can be used to:
+
+- Create complex constraints
+- Describe compound values like arrays and objects
+- Apply separate schemas to different parts of an instance
+
+For example, to describe a JSON object, a schema can:
+
+1. Use the `type` keyword to declare that the value MUST be an object
+2. Use the `properties` keyword to apply separate schemas to each of the object's properties
+
+This allows for evaluation of complex JSON documents using a uniform recursive algorithm.
+
+### Extension Model
+
+JSON Schema defines an official collection of keywords (called a dialect), but also includes a flexible extension model that allows third parties to define their own dialects. Extension keywords MUST NOT:
+
+- Directly modify the operation of keywords defined by this specification
+- Begin with the `$` prefix (reserved for core keywords)
+- Begin with `x-` and affect evaluation (these are reserved for implicit annotations)
+
+## Schema Forms
+
+<CardGroup cols={2}>
+  <Card title="Object Schemas" icon="brackets-curly">
+    Schema objects contain keywords that define constraints, annotations, and applicators. This is the most common form.
+  </Card>
+  <Card title="Boolean Schemas" icon="toggle-on">
+    `true` always passes validation, `false` always fails. These clarify intent and facilitate optimizations.
+  </Card>
+</CardGroup>
+
+### Boolean Schemas
+
+The boolean values `true` and `false` are trivial schemas:
+
+- `true`: Always passes validation (equivalent to empty schema `{}`)
+- `false`: Always fails validation (equivalent to `{ "not": {} }`)
+
+These boolean schemas ensure that the intent is clear to both human readers and implementations.
+
+## Versioning and Compatibility
+
+This specification is identified by version and release year (e.g., "v1/2026"). A schema written to conform with a given version is compatible with successive specifications published with:
+
+- The same version number
+- The same or greater release year value
+
+This provides a guarantee of forward compatibility within a version.
+
+<Info>
+Schemas specify which version they conform to using the `$schema` keyword, which identifies both the dialect and the meta-schema.
+</Info>
+
+## Key Concepts
+
+Before diving deeper, it's important to understand these foundational concepts:
+
+- **Instance**: A JSON document to which a schema is applied
+- **Schema Resource**: A schema identified by an absolute IRI
+- **Root Schema**: The top-level schema identified by an absolute IRI
+- **Subschema**: A schema nested within another schema
+- **Meta-schema**: A schema that describes other schemas
+- **Keyword**: A property in a schema object that produces constraints, annotations, or other behaviors
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Core Definitions" href="./definitions" icon="book">
+    Learn about JSON documents, instances, schemas, and the data model
+  </Card>
+  <Card title="Keywords" href="./keywords" icon="key">
+    Understand keyword behaviors, scopes, and interactions
+  </Card>
+  <Card title="Schema Structure" href="./schemas" icon="sitemap">
+    Explore schema resources, references, and composition
+  </Card>
+  <Card title="Fragment Identifiers" href="./fragment-identifiers" icon="link">
+    Learn how to identify and reference subschemas
+  </Card>
+</CardGroup>

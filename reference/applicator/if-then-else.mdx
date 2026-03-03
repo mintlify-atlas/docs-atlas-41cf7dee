@@ -1,0 +1,313 @@
+---
+title: if/then/else
+description: Conditionally apply schemas based on validation results
+---
+
+The `if`, `then`, and `else` keywords work together to implement conditional schema application. They allow different validation rules based on whether an instance matches a condition.
+
+## Syntax
+
+```json
+{
+  "if": { /* condition schema */ },
+  "then": { /* schema when condition passes */ },
+  "else": { /* schema when condition fails */ }
+}
+```
+
+Each keyword's value must be a valid JSON Schema. All three keywords are optional and independent.
+
+## Behavior
+
+1. The `if` schema is evaluated against the instance
+2. If `if` validates successfully and `then` is present, the instance must also validate against `then`
+3. If `if` fails validation and `else` is present, the instance must also validate against `else`
+4. The `if` validation result does not directly affect overall validation
+5. Annotations from `if` are collected regardless of whether `then` or `else` is present
+
+### Important Rules
+
+- `if`, `then`, and `else` must not interact across subschema boundaries (e.g., across `allOf` branches)
+- When `if` is absent, both `then` and `else` are completely ignored
+- When `then` or `else` is absent, there is no default behavior (not treated as empty schema)
+- Implementations must not evaluate `then` or `else` for validation or annotation if their condition is not met
+
+## Examples
+
+### Basic Conditional Validation
+
+Require different properties based on a type field:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "type": { "type": "string" }
+  },
+  "if": {
+    "properties": {
+      "type": { "const": "residential" }
+    }
+  },
+  "then": {
+    "properties": {
+      "bedrooms": { "type": "integer", "minimum": 1 }
+    },
+    "required": ["bedrooms"]
+  },
+  "else": {
+    "properties": {
+      "officeSpace": { "type": "number" }
+    },
+    "required": ["officeSpace"]
+  }
+}
+```
+
+Valid instances:
+```json
+{ "type": "residential", "bedrooms": 3 }
+{ "type": "commercial", "officeSpace": 5000 }
+```
+
+Invalid:
+```json
+{ "type": "residential", "officeSpace": 1000 }
+{ "type": "commercial", "bedrooms": 2 }
+```
+
+### Age-Based Validation
+
+Apply different constraints based on age:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "age": { "type": "integer" },
+    "email": { "type": "string" },
+    "parentEmail": { "type": "string" }
+  },
+  "if": {
+    "properties": {
+      "age": { "minimum": 18 }
+    }
+  },
+  "then": {
+    "required": ["email"]
+  },
+  "else": {
+    "required": ["parentEmail"]
+  }
+}
+```
+
+Valid:
+```json
+{ "age": 25, "email": "user@example.com" }
+{ "age": 15, "parentEmail": "parent@example.com" }
+```
+
+### Using Only if/then
+
+No else branch - only add requirements when condition is met:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "shippingMethod": { "type": "string" },
+    "trackingNumber": { "type": "string" }
+  },
+  "if": {
+    "properties": {
+      "shippingMethod": { "const": "express" }
+    }
+  },
+  "then": {
+    "required": ["trackingNumber"]
+  }
+}
+```
+
+Valid:
+```json
+{ "shippingMethod": "express", "trackingNumber": "12345" }
+{ "shippingMethod": "standard" }
+```
+
+Invalid:
+```json
+{ "shippingMethod": "express" }
+```
+
+### Country-Specific Validation
+
+Different postal code formats by country:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "country": { "type": "string" },
+    "postalCode": { "type": "string" }
+  },
+  "required": ["country", "postalCode"],
+  "if": {
+    "properties": {
+      "country": { "const": "US" }
+    }
+  },
+  "then": {
+    "properties": {
+      "postalCode": { "pattern": "^[0-9]{5}(-[0-9]{4})?$" }
+    }
+  },
+  "else": {
+    "if": {
+      "properties": {
+        "country": { "const": "CA" }
+      }
+    },
+    "then": {
+      "properties": {
+        "postalCode": { "pattern": "^[A-Z][0-9][A-Z] [0-9][A-Z][0-9]$" }
+      }
+    }
+  }
+}
+```
+
+### Product Variant Validation
+
+Different requirements based on product type:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "productType": { "enum": ["physical", "digital", "service"] },
+    "weight": { "type": "number" },
+    "downloadUrl": { "type": "string" },
+    "duration": { "type": "integer" }
+  },
+  "required": ["productType"],
+  "if": {
+    "properties": {
+      "productType": { "const": "physical" }
+    }
+  },
+  "then": {
+    "required": ["weight"]
+  },
+  "else": {
+    "if": {
+      "properties": {
+        "productType": { "const": "digital" }
+      }
+    },
+    "then": {
+      "required": ["downloadUrl"]
+    },
+    "else": {
+      "required": ["duration"]
+    }
+  }
+}
+```
+
+### Multiple Conditions
+
+Chain conditions for complex logic:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "accountType": { "enum": ["free", "premium", "enterprise"] },
+    "apiCallLimit": { "type": "integer" },
+    "supportLevel": { "type": "string" }
+  },
+  "if": {
+    "properties": {
+      "accountType": { "const": "enterprise" }
+    }
+  },
+  "then": {
+    "properties": {
+      "apiCallLimit": { "minimum": 1000000 },
+      "supportLevel": { "const": "24/7" }
+    },
+    "required": ["apiCallLimit", "supportLevel"]
+  },
+  "else": {
+    "if": {
+      "properties": {
+        "accountType": { "const": "premium" }
+      }
+    },
+    "then": {
+      "properties": {
+        "apiCallLimit": { "minimum": 100000, "maximum": 999999 },
+        "supportLevel": { "const": "business-hours" }
+      },
+      "required": ["apiCallLimit", "supportLevel"]
+    },
+    "else": {
+      "properties": {
+        "apiCallLimit": { "maximum": 10000 }
+      }
+    }
+  }
+}
+```
+
+### Preventing Invalid States
+
+Use `then` with `not` to prevent invalid combinations:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": { "type": "string" },
+    "completedDate": { "type": "string" }
+  },
+  "if": {
+    "properties": {
+      "status": { "const": "pending" }
+    }
+  },
+  "then": {
+    "not": {
+      "required": ["completedDate"]
+    }
+  }
+}
+```
+
+## Common Use Cases
+
+- **Type-based validation**: Different schemas for different types/variants
+- **Feature flags**: Apply constraints based on feature availability
+- **Tiered systems**: Different requirements for different tiers/levels
+- **Regional variations**: Locale or country-specific validation
+- **State machines**: Validate state transitions and state-specific properties
+- **Progressive requirements**: Add requirements as other fields are populated
+
+## Notes
+
+- The `if` schema is always evaluated, even if `then` and `else` are absent
+- Annotations from `if` are collected normally, enabling their use by applications
+- Only the matching branch (`then` or `else`) is evaluated for validation
+- The non-matching branch is completely skipped, including for annotation collection
+- `if`/`then`/`else` in one `allOf` branch cannot affect another branch
+- These keywords enable declarative conditional logic without extension keywords
+
+## Best Practices
+
+- Use clear discriminator fields (like `type`, `kind`, `version`) in `if` conditions
+- Consider using `anyOf` or `oneOf` with complete schemas for simple cases
+- Nest `if`/`then`/`else` in `else` branches for multi-way conditions
+- Keep conditions simple and readable
+- Document the business logic behind conditional validation

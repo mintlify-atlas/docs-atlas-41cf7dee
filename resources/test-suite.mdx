@@ -1,0 +1,78 @@
+---
+title: Test Suite
+description: Conformance tests for JSON Schema and its vocabularies to ensure implementation correctness
+---
+
+## Overview
+
+The JSON Schema Test Suite is a comprehensive collection of conformance tests designed to verify that JSON Schema implementations correctly handle all aspects of the specification and its vocabularies.
+
+## Repository
+
+The test suite is maintained as a separate project to facilitate sharing across all JSON Schema implementations:
+
+<Card title="JSON Schema Test Suite" icon="flask" href="https://github.com/json-schema-org/JSON-Schema-Test-Suite">
+  Official conformance tests for JSON Schema implementations
+</Card>
+
+## Purpose
+
+The test suite serves several critical functions:
+
+- **Implementation Verification**: Ensures that JSON Schema implementations correctly implement the specification
+- **Regression Testing**: Helps maintainers catch regressions when making changes
+- **Specification Clarity**: Provides concrete examples of how features should behave
+- **Cross-Implementation Consistency**: Promotes consistent behavior across different implementations
+
+## Coverage
+
+The test suite includes tests for:
+
+- Core JSON Schema functionality
+- Validation keywords from all standard vocabularies
+- Edge cases and corner scenarios
+- Format validation
+- Schema composition (`allOf`, `anyOf`, `oneOf`)
+- Reference resolution (`$ref`, `$id`)
+- Draft-specific features across multiple specification versions
+
+## Using the Test Suite
+
+### For Implementation Authors
+
+If you're building a JSON Schema implementation, you should:
+
+1. Clone the test suite repository
+2. Run the tests against your implementation
+3. Ensure all applicable tests pass for your target draft version
+4. Add the test suite to your CI/CD pipeline
+
+### Test Structure
+
+Tests are organized by:
+
+- **Draft version**: Separate tests for different JSON Schema draft versions
+- **Feature**: Grouped by keywords and functionality
+- **Format**: Machine-readable JSON format for easy integration
+
+## Contributing
+
+The test suite welcomes contributions:
+
+- Report missing test cases
+- Submit new tests for edge cases
+- Improve test documentation
+- Help maintain test accuracy
+
+Visit the [test suite repository](https://github.com/json-schema-org/JSON-Schema-Test-Suite) to contribute.
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Implementations" icon="code" href="/resources/implementations">
+    Browse JSON Schema implementations that use this test suite
+  </Card>
+  <Card title="Specification" icon="book" href="http://json-schema.org/specification.html">
+    View the official JSON Schema specification
+  </Card>
+</CardGroup>

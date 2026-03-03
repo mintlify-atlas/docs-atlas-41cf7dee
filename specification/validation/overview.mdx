@@ -1,0 +1,107 @@
+---
+title: "Validation Overview"
+description: "Learn how JSON Schema validation works, including assertion keywords, annotations, and validation behaviors"
+---
+
+## Introduction
+
+JSON Schema can be used to require that a given JSON document (an instance) satisfies a certain number of criteria. These criteria are asserted by using keywords described in this specification. In addition, a set of keywords is also defined to assist in interactive user interface instance generation.
+
+## How Validation Works
+
+JSON Schema validation asserts constraints on the structure of instance data. An instance location that satisfies all asserted constraints is then annotated with any keywords that contain non-assertion information, such as descriptive metadata and usage hints.
+
+<Info>
+If all locations within the instance satisfy all asserted constraints, then the instance is said to be **valid** against the schema.
+</Info>
+
+Each schema object is independently evaluated against each instance location to which it applies. This greatly simplifies the implementation requirements for validators by ensuring that they do not need to maintain state across the document-wide validation process.
+
+## Keyword Behaviors
+
+The keywords defined in the validation specification exhibit one or more behaviors:
+
+- **Assertion keywords**: Produce validation results (true or false)
+- **Annotation keywords**: Provide metadata without affecting validation
+- **Hybrid keywords**: Can function as both assertions and annotations
+
+<Warning>
+Keywords which are not defined to exhibit a particular behavior MUST NOT affect that aspect of the evaluation outcome. In particular, annotation-only keywords produce no assertion result and therefore are not considered during validation.
+</Warning>
+
+### Validation Process
+
+For the purposes of validation, an instance "validating against a keyword" means that:
+
+1. The keyword evaluates the instance against its constraint
+2. If the instance satisfies the constraint, the keyword produces an assertion result of `true`
+3. If the instance does not satisfy the constraint, the keyword produces an assertion result of `false`
+
+## Validation Keyword Categories
+
+This specification defines several categories of validation keywords:
+
+<CardGroup cols={2}>
+  <Card title="Structural Validation" icon="shapes" href="/specification/validation/structural-validation">
+    Keywords for validating types, numbers, strings, arrays, and objects
+  </Card>
+  
+  <Card title="Format Validation" icon="check-circle" href="/specification/validation/format">
+    Semantic validation for common data formats like dates, emails, and URIs
+  </Card>
+  
+  <Card title="Content Validation" icon="file-code" href="/specification/validation/content">
+    Keywords for string-encoded data like base64 or embedded JSON
+  </Card>
+  
+  <Card title="Annotations" icon="tag" href="/specification/validation/annotations">
+    Meta-data keywords for documentation and UI generation
+  </Card>
+</CardGroup>
+
+## Interoperability Considerations
+
+### String Instances
+
+The nul character (`\u0000`) is valid in a JSON string. An instance to validate may contain a string value with this character, regardless of the ability of the underlying programming language to deal with such data.
+
+### Numeric Instances
+
+The JSON specification allows numbers with arbitrary precision, and JSON Schema does not add any such bounds. This means that numeric instances processed by JSON Schema can be arbitrarily large and/or have an arbitrarily long decimal part, regardless of the ability of the underlying programming language to deal with such data.
+
+### Regular Expressions
+
+Keywords that use regular expressions, or constrain the instance value to be a regular expression, are subject to interoperability considerations. Different implementations may support different regular expression dialects, which can affect validation outcomes.
+
+## Meta-Schema
+
+The current IRI for the default JSON Schema dialect meta-schema is:
+
+```
+https://json-schema.org/v1/2026
+```
+
+This IRI encodes the specification's version and release year. The meta-schema IRI `https://json-schema.org/v1` is also recognized to represent the latest release within the indicated version.
+
+<Note>
+Implementations MUST NOT assume that a document is provided at the meta-schema URL. Rather than performing a network request, implementations SHOULD include a copy of the meta-schema.
+</Note>
+
+The meta-schema describes a dialect consisting of all keywords defined in the validation specification and the JSON Schema Core specification. Where the meta-schema conflicts with either specification, the specifications take precedence.
+
+## Terminology
+
+**Container instance**: Refers to both array and object instances.
+
+**Children instances**: Refers to array elements or object member values.
+
+**Unique elements**: Elements in an array value are said to be unique if no two elements of this array are equal according to the JSON Schema Core specification.
+
+## Next Steps
+
+Explore the specific validation keyword categories:
+
+- [Structural Validation Keywords](/specification/validation/structural-validation) - Type checking and structural constraints
+- [Format Validation](/specification/validation/format) - Semantic format validation
+- [Content Validation](/specification/validation/content) - String-encoded data handling
+- [Annotation Keywords](/specification/validation/annotations) - Meta-data and documentation

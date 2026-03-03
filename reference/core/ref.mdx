@@ -1,0 +1,274 @@
+---
+title: $ref
+description: References another schema to be applied at the current location
+---
+
+The `$ref` keyword is an applicator that references a statically identified schema. The results of evaluating the current location are the results of the referenced schema.
+
+## Syntax
+
+<ParamField path="$ref" type="string" required>
+  A string that is an IRI reference. When resolved against the current base IRI, it produces the IRI of the schema to apply.
+</ParamField>
+
+## Purpose
+
+The `$ref` keyword enables:
+
+1. **Schema Reuse**: Reference the same schema from multiple locations
+2. **Modular Design**: Split large schemas into manageable, focused components  
+3. **Recursive Schemas**: Create schemas that reference themselves
+4. **Cross-Document References**: Reference schemas in other documents
+
+## Usage
+
+### Fragment References (Same Document)
+
+Reference schemas within the same document using JSON Pointer fragments:
+
+```json
+{
+  "$id": "https://example.com/schemas/user.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "address": { "$ref": "#/$defs/address" }
+  },
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      },
+      "required": ["street", "city"]
+    }
+  }
+}
+```
+
+### Plain Name Anchors
+
+Reference schemas using `$anchor` plain name fragments:
+
+```json
+{
+  "$id": "https://example.com/root.json",
+  "type": "array",
+  "items": { "$ref": "#item" },
+  "$defs": {
+    "single": {
+      "$anchor": "item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" }
+      }
+    }
+  }
+}
+```
+
+The reference `#item` resolves to the schema with `$anchor: "item"`.
+
+### External References
+
+Reference schemas in other documents:
+
+```json
+{
+  "$id": "https://example.com/product.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "category": { "$ref": "https://example.com/category.json" },
+    "manufacturer": { "$ref": "manufacturer.json" }
+  }
+}
+```
+
+- Absolute reference: `https://example.com/category.json`
+- Relative reference: `manufacturer.json` (resolves to `https://example.com/manufacturer.json`)
+
+### External Reference with Fragment
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "billing": { "$ref": "https://example.com/defs.json#/$defs/address" },
+    "shipping": { "$ref": "https://example.com/defs.json#/$defs/address" }
+  }
+}
+```
+
+## Examples
+
+### Recursive Schema
+
+```json
+{
+  "$id": "https://example.com/tree.json",
+  "type": "object",
+  "properties": {
+    "value": { "type": "string" },
+    "children": {
+      "type": "array",
+      "items": { "$ref": "#" }
+    }
+  }
+}
+```
+
+The reference `#` refers to the root schema, creating a recursive tree structure.
+
+### Reusable Definitions
+
+```json
+{
+  "$id": "https://example.com/schemas/api.json",
+  "type": "object",
+  "properties": {
+    "user": { "$ref": "#/$defs/user" },
+    "admin": {
+      "allOf": [
+        { "$ref": "#/$defs/user" },
+        {
+          "properties": {
+            "privileges": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "user": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "username": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      },
+      "required": ["id", "username", "email"]
+    }
+  }
+}
+```
+
+### Cross-Schema References
+
+**common.json:**
+```json
+{
+  "$id": "https://example.com/common.json",
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
+```
+
+**product.json:**
+```json
+{
+  "$id": "https://example.com/product.json",
+  "type": "object",
+  "properties": {
+    "id": { "$ref": "common.json#/$defs/positiveInteger" },
+    "created": { "$ref": "common.json#/$defs/timestamp" },
+    "quantity": { "$ref": "common.json#/$defs/positiveInteger" }
+  }
+}
+```
+
+## Reference Resolution
+
+### Resolution Process
+
+1. **Parse**: Parse the `$ref` value as an IRI reference
+2. **Resolve**: Resolve it against the current base IRI per RFC 3986
+3. **Locate**: Locate the referenced schema resource
+4. **Apply**: Apply the referenced schema to the current instance location
+
+### Current Base IRI
+
+The base IRI for resolving `$ref` is determined by:
+
+1. The `$id` of the closest parent schema that has one
+2. The document retrieval IRI if no `$id` is present
+3. Implementation-specific default
+
+## Adjacent Keywords
+
+Other keywords can appear alongside `$ref` in the same schema object:
+
+```json
+{
+  "$ref": "#/$defs/base",
+  "description": "Extended from base schema",
+  "examples": [
+    { "name": "Example" }
+  ]
+}
+```
+
+The `description` and `examples` apply to the same location as `$ref`. All keywords in the object are evaluated.
+
+## Network Considerations
+
+### Identifiers, Not Locators
+
+The resolved IRI from `$ref` is an identifier, not necessarily a network locator. A schema need not be downloadable from the IRI if it's a network-addressable URL.
+
+### Offline Operation
+
+Implementations which can access the network SHOULD default to operating offline. Schemas should be pre-loaded or registered rather than fetched on-demand.
+
+```json
+// This reference should work without network access
+// if the schema is pre-registered
+{
+  "$ref": "https://example.com/schemas/user.json"
+}
+```
+
+## Error Handling
+
+### Failed Reference Resolution
+
+If a reference cannot be resolved, evaluation MUST:
+
+- Halt and return an indeterminate result
+- NOT return a passing or failing validation result  
+- NOT return any annotations
+- Inform the consuming application of the failure (e.g., raise an exception)
+
+### Optimization Considerations
+
+With certain optimizations, unresolvable references might be skipped:
+
+```json
+{
+  "anyOf": [
+    true,
+    { "$ref": "https://json-schema.org/does-not-exist" }
+  ]
+}
+```
+
+An optimized evaluator may skip the second schema since the first will always succeed. Unoptimized evaluation (e.g., when collecting annotations) would fail.
+
+## Related Keywords
+
+- [`$id`](/reference/core/id) - Identifies schemas that can be referenced
+- [`$defs`](/reference/core/defs) - Common location for reusable schemas
+- [`$dynamicRef`](/specification/core/schemas) - Dynamic reference resolution
+- [`$anchor`](/specification/core/fragment-identifiers) - Creates plain name fragment identifiers for referencing

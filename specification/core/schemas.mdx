@@ -1,0 +1,363 @@
+---
+title: Schema Structure and Composition
+description: Understanding schema resources, loading, processing, and composing schemas using references and bundling
+---
+
+## Schema Identification
+
+To differentiate between schemas in a vast ecosystem, schema resources are identified by absolute IRIs (without fragments). These identifiers are used to create references between schema resources.
+
+<Note>
+When comparing IRIs for resource identification, implementations MUST apply Syntax-Based IRI normalization procedures defined in [RFC 3987, section 5.3.2](https://www.rfc-editor.org/rfc/rfc3987.html#section-5.3.2).
+</Note>
+
+### The `$id` Keyword
+
+An `$id` keyword in a schema or subschema identifies that schema or subschema as a distinct schema resource and applies to the entire lexical scope of that schema resource.
+
+The value for this keyword MUST be:
+
+- A string
+- A valid IRI reference without a fragment
+
+When resolved against the current base IRI, it produces the identifier for the schema resource.
+
+<Tip>
+An IRI is an identifier and not necessarily a network locator. A schema need not be downloadable from its canonical IRI.
+</Tip>
+
+#### Identifying the Root Schema
+
+The root schema of a JSON Schema document SHOULD contain an `$id` keyword with an absolute IRI (containing a scheme, but no fragment):
+
+```json
+{
+  "$id": "https://example.com/schemas/person.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" }
+  }
+}
+```
+
+### Location-Independent Identifiers
+
+Using JSON Pointers in IRI fragments couples the IRI to the structure of the schema. Plain name fragment identifiers are preferable because they are not tied to a particular structural location.
+
+#### The `$anchor` Keyword
+
+The `$anchor` keyword defines location-independent identifiers for subschemas within a schema resource. It defines a plain name fragment identifier that can be used in IRI fragments as an alternative to JSON Pointers.
+
+The value of this keyword MUST be:
+
+- A string
+- Conforming to the NCName production (alphanumeric, underscore, hyphen, period)
+
+```json
+{
+  "$id": "https://example.com/schemas/common.json",
+  "$defs": {
+    "positiveInteger": {
+      "$anchor": "positive-int",
+      "type": "integer",
+      "exclusiveMinimum": 0
+    }
+  }
+}
+```
+
+This can be referenced as `https://example.com/schemas/common.json#positive-int`.
+
+<Warning>
+The anchor string does not include the "#" character—it is just a fragment identifier, not an IRI reference.
+</Warning>
+
+### Dynamically Scoped Identifiers
+
+The `$dynamicAnchor` keyword defines location-independent identifiers for subschemas within the dynamic scope of a schema evaluation. They are only used by `$dynamicRef` and are not meaningful in IRI fragments.
+
+This is an advanced feature for cases where a reference in a referenced schema might need to be overridden by the referencing schema.
+
+## Schema References
+
+`$ref` and `$dynamicRef` are used to reference a schema to be applied to the current instance location. As applicators, they apply the referenced schema to the instance.
+
+### Direct References with `$ref`
+
+The `$ref` keyword is an applicator used to reference a statically identified schema. Its results are the results of the referenced schema.
+
+The value MUST be a string which is an IRI reference:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "billing_address": { "$ref": "#/$defs/address" },
+    "shipping_address": { "$ref": "#/$defs/address" }
+  },
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "country": { "type": "string" }
+      },
+      "required": ["street", "city", "country"]
+    }
+  }
+}
+```
+
+<Info>
+Other keywords can appear alongside `$ref` in the same schema object. The resolved IRI produced by `$ref` is not necessarily a network locator—implementations SHOULD default to operating offline.
+</Info>
+
+### Dynamic References with `$dynamicRef`
+
+The `$dynamicRef` keyword is an applicator used when the referencing schema might need to override where a reference in the referenced schema will resolve.
+
+This is useful for:
+
+- Authoring recursive schemas that can be extended
+- Creating generic schemas (like a list) whose items are defined by the referencing schema
+
+The value MUST be a string conforming to plain name fragment identifier syntax.
+
+`$dynamicAnchor` and `$dynamicRef` form a string-matched pair. Resolution begins by identifying the outermost schema resource in the dynamic scope which defines a matching `$dynamicAnchor`.
+
+<Warning>
+This is an advanced feature. Use with caution as it relies on dynamic scope rather than static analysis.
+</Warning>
+
+### Schema Re-Use with `$defs`
+
+The `$defs` keyword reserves a location for schema authors to inline re-usable JSON Schemas. The keyword does not directly affect the validation result.
+
+The value MUST be an object where each member value is a valid JSON Schema:
+
+```json
+{
+  "type": "array",
+  "items": { "$ref": "#/$defs/positiveInteger" },
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "exclusiveMinimum": 0
+    }
+  }
+}
+```
+
+## Loading and Processing Schemas
+
+### Initial Base IRI
+
+The initial base IRI of a schema is determined according to [RFC 3987 Section 6.5](https://www.rfc-editor.org/rfc/rfc3987.html#section-6.5) and [RFC 3986 Section 5.1](https://www.rfc-editor.org/rfc/rfc3986.html#section-5.1).
+
+Informally, the initial base IRI is the IRI at which the schema was found, whether:
+
+- A network location
+- A local filesystem
+- Any other situation identifiable by an IRI
+
+If no source is known, a suitable implementation-specific default IRI MAY be used. Implementations SHOULD document any default base IRI they assume.
+
+### Loading a Referenced Schema
+
+The use of IRIs to identify remote schemas does not necessarily mean anything is downloaded. Instead, implementations SHOULD understand ahead of time which schemas they will be using and the IRIs that identify them.
+
+Implementations SHOULD be able to:
+
+- Associate arbitrary IRIs with arbitrary schemas
+- Automatically associate a schema's `$id`-given IRI
+
+These associations can be:
+
+- Supplied prior to processing instances
+- Noted within a schema document as it is processed
+
+<Note>
+Implementations MAY provide functionality to automatically fetch schemas based on location semantics expressed by the IRI, however such functionality SHOULD be disabled by default to prefer offline operation.
+</Note>
+
+### Detecting a Meta-Schema
+
+Implementations MUST recognize a schema as a meta-schema if it was identified as such by another schema's `$schema` keyword.
+
+This means a single schema document might sometimes be considered:
+
+- A regular schema
+- A meta-schema (at other times)
+
+When a schema is its own meta-schema:
+
+1. It is initially processed as a regular schema
+2. When loaded a second time (via its own `$schema` value), it is treated as a meta-schema
+
+### Dereferencing
+
+Schemas can be identified by any IRI that has been given to them, including:
+
+- A JSON Pointer
+- Their IRI given directly by `$id`
+
+Dereferencing a `$ref` reference involves:
+
+1. Resolving its value as an IRI reference against the current base IRI
+2. Using the schema identified by the resulting IRI if available
+
+Example:
+
+```json
+{
+  "$id": "https://example.net/root.json",
+  "type": "array",
+  "items": { "$ref": "#item" },
+  "$defs": {
+    "single": {
+      "$anchor": "item",
+      "type": "object",
+      "additionalProperties": { "$ref": "other.json" }
+    }
+  }
+}
+```
+
+When the implementation encounters:
+
+- `#item` reference → resolves to `https://example.net/root.json#item` (defined in this document)
+- `other.json` → resolves to `https://example.net/other.json` (must be pre-loaded or behavior per failed references)
+
+#### JSON Pointer Fragment Identifiers and Embedded Resources
+
+Since JSON Pointer fragment identifiers are based on document structure, an embedded schema resource and its subschemas can be identified using JSON Pointer IRI fragments relative to:
+
+- Its own IRI
+- Any containing resource's IRI
+
+<Warning>
+Because IRIs with JSON Pointer fragments cease to be valid when embedded schemas are moved to separate documents, applications and schemas SHOULD NOT use such IRIs to identify embedded schema resources or locations within them.
+</Warning>
+
+Example:
+
+```json
+{
+  "$id": "https://example.com/foo",
+  "items": {
+    "$id": "https://example.com/bar",
+    "additionalProperties": {}
+  }
+}
+```
+
+IRIs:
+
+- `https://example.com/foo#/items` → points to the items schema (non-canonical)
+- `https://example.com/bar` → canonical IRI of the embedded resource
+- `https://example.com/bar#/additionalProperties` → canonical IRI for additionalProperties
+- `https://example.com/foo#/items/additionalProperties` → non-canonical, breaks if separated
+
+## Compound Documents
+
+A **Compound Schema Document** is a JSON document with multiple embedded JSON Schema Resources bundled into the same document to ease transportation.
+
+Each embedded Schema Resource MUST be treated as an individual Schema Resource, following standard schema loading and processing requirements.
+
+### Bundling
+
+Bundling is the process of taking references (such as `$ref`) to external Schema Resources and embedding the referenced resources within the referring document.
+
+Bundling SHOULD be done such that all IRIs in the base document and referenced/embedded documents do not require altering.
+
+<CardGroup cols={2}>
+  <Card title="Required" icon="check">
+    Each embedded resource MUST identify itself with an `$id`
+  </Card>
+  <Card title="Recommended" icon="star">
+    Use `$schema` to identify the dialect. Place bundled resources in `$defs`
+  </Card>
+</CardGroup>
+
+Example bundled schema:
+
+```json
+{
+  "$id": "https://example.com/main.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "address": { "$ref": "https://example.com/address.json" }
+  },
+  "$defs": {
+    "bundled-address": {
+      "$id": "https://example.com/address.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+<Note>
+The key "bundled-address" in `$defs` is not referenced in JSON Schema—it's for application use. The reference uses the embedded resource's `$id`.
+</Note>
+
+A Bundled Schema Resource MUST NOT be bundled by:
+
+- Replacing the schema object from which it was referenced
+- Wrapping the Schema Resource in other applicator keywords
+
+### Differing and Default Dialects
+
+When multiple schema resources are present in a single document:
+
+- Resources without a `$schema` keyword MUST be processed with the same dialect as the enclosing resource
+- Embedded resources MAY specify different dialects using `$schema`
+
+### Validating Compound Documents
+
+Given that a Compound Schema Document may have embedded resources using different dialects:
+
+- These documents SHOULD NOT be validated by applying a meta-schema to the entire document
+- Each Schema Resource SHOULD be separately validated against its associated meta-schema
+
+A Compound Schema Document where all embedded resources use the same dialect MAY be validated by applying the appropriate meta-schema.
+
+## Failure to Resolve References
+
+If a reference cannot be resolved, the evaluation MUST halt and return an indeterminate result. Specifically, it MUST NOT return a passing or failing validation result or any annotations.
+
+<Warning>
+Instead, inform the consuming application or user of the evaluation failure via other means. It is RECOMMENDED that implementations raise an exception or other error.
+</Warning>
+
+In cases where optimizations are enabled and a schema containing a non-resolvable reference would be skipped, behavior is implementation-defined:
+
+```json
+{
+  "anyOf": [
+    true,
+    { "$ref": "https://json-schema.org/does-not-exist" }
+  ]
+}
+```
+
+An optimized evaluation may recognize that the first branch satisfies `anyOf` and skip the second branch. An unoptimized evaluation would result in a resolution failure.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Fragment Identifiers" href="./fragment-identifiers" icon="link">
+    Learn about fragment identifier structures
+  </Card>
+  <Card title="Core Keywords" href="../keywords/core" icon="dollar-sign">
+    Explore essential schema keywords
+  </Card>
+</CardGroup>

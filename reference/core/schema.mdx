@@ -1,0 +1,86 @@
+---
+title: $schema
+description: Declares the JSON Schema dialect for a schema document
+---
+
+The `$schema` keyword is both used as a JSON Schema dialect identifier and as the identifier of a resource which is itself a JSON Schema, which describes the set of valid schemas written for this particular dialect.
+
+## Syntax
+
+<ParamField path="$schema" type="string" required>
+  An IRI (containing a scheme) that identifies the JSON Schema dialect. This IRI MUST be normalized.
+</ParamField>
+
+## Purpose
+
+The `$schema` keyword serves two critical functions:
+
+1. **Dialect Identification**: Specifies which version and dialect of JSON Schema the schema document uses
+2. **Meta-Schema Reference**: Points to a JSON Schema that validates the syntax of schemas written in this dialect
+
+The identified dialect applies to the entire schema resource and any embedded schema resources, unless an embedded resource declares a different dialect with its own `$schema` keyword.
+
+## Usage
+
+### Placement
+
+The `$schema` keyword:
+- SHOULD be used in the document root schema object
+- MAY be used in root schema objects of embedded schema resources  
+- MUST NOT appear in subschemas that are not also root objects of schema resources
+
+### Value Format
+
+The value MUST be:
+- A valid IRI containing a scheme (e.g., `https://`)
+- Normalized according to IRI normalization rules
+- Typically an absolute IRI pointing to a meta-schema
+
+## Examples
+
+### Basic Usage
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  }
+}
+```
+
+### With Embedded Resources
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/main.json",
+  "type": "object",
+  "$defs": {
+    "customSchema": {
+      "$schema": "https://example.com/custom-dialect",
+      "$id": "https://example.com/custom.json",
+      "type": "string"
+    }
+  }
+}
+```
+
+In this example, the embedded resource at `$defs/customSchema` uses a different dialect than the main schema.
+
+## Dialect Determination
+
+When evaluation encounters a new schema resource, implementations determine the dialect using this priority:
+
+1. **The `$schema` keyword** - Process the schema according to the declared dialect
+2. **Parent schema dialect** - Embedded resources without `$schema` use the parent's dialect  
+3. **External context** - Media type parameters or document-level defaults
+4. **User configuration** - Implementation-specific dialect configuration
+
+If no dialect can be determined through these methods, implementations MUST refuse to process the schema.
+
+## Related Keywords
+
+- [`$id`](/reference/core/id) - Identifies the schema resource
+- [`$vocabulary`](/reference/core/vocabulary) - Declares required and optional vocabularies (meta-schema feature)

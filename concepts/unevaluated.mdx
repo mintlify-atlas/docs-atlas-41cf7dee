@@ -1,0 +1,319 @@
+---
+title: Unevaluated Locations
+description: Understanding how unevaluatedItems and unevaluatedProperties work in JSON Schema
+---
+
+The `unevaluatedItems` and `unevaluatedProperties` keywords allow schema authors to apply subschemas to array items or object properties that have not been successfully evaluated against any subschema from adjacent keywords.
+
+## Overview
+
+These keywords enable schema authors to:
+
+- Control validation of array items or object properties not covered by other keywords
+- Implement "closed" schemas that disallow unexpected data
+- Combine multiple schemas while maintaining control over what is allowed
+
+<Info>
+Only **successful** evaluations are considered. Instance items or properties may have been unsuccessfully evaluated against one or more subschemas (such as a failed `anyOf` branch) without being considered "evaluated."
+</Info>
+
+## What Does "Evaluated" Mean?
+
+An item in an array or property in an object is "successfully evaluated" if it is logically considered valid in terms of the expected representation.
+
+**Example:** If a subschema represents a car requiring between 2-4 wheels, and the value of "wheels" is 6, the instance object is not "evaluated" to be a car, and thus the "wheels" property is considered "unevaluated."
+
+### Adjacent Keywords
+
+Adjacent keywords are keywords within the same schema object. The behavior of unevaluated keywords depends on:
+
+- Adjacent keywords in the same schema object
+- Keywords in successfully validated subschemas that apply to the same instance location
+
+This includes keywords encountered through:
+- Lexical subschemas
+- Reference targets (like `$ref`)
+- All in-place applicators (`allOf`, `anyOf`, `oneOf`, etc.)
+
+## unevaluatedItems
+
+The value of `unevaluatedItems` must be a valid JSON Schema. This keyword applies to array instances by applying its subschema to the array's elements.
+
+### How It Works
+
+The keyword applies its subschema to any array elements which have not been deemed "evaluated." Validation passes if the keyword's subschema validates against all applicable array elements.
+
+### Interacting Keywords
+
+The behavior depends on:
+- `prefixItems`
+- `items`
+- `contains`
+- `unevaluatedItems` itself
+- All in-place applicators
+
+### Example: Basic Usage
+
+```json
+{
+  "prefixItems": [
+    { "type": "string" },
+    { "type": "number" }
+  ],
+  "unevaluatedItems": false
+}
+```
+
+This schema:
+- ✅ Validates: `["foo", 42]`
+- ❌ Rejects: `["foo", 42, "extra"]` (third item is unevaluated)
+
+### Example: With Composition
+
+```json
+{
+  "allOf": [
+    {
+      "prefixItems": [
+        { "type": "string" }
+      ]
+    },
+    {
+      "prefixItems": [
+        { "type": "string" },
+        { "type": "number" }
+      ]
+    }
+  ],
+  "unevaluatedItems": false
+}
+```
+
+Since both schemas in `allOf` successfully evaluate, items at indices 0 and 1 are considered evaluated. Any additional items would be unevaluated.
+
+### Example: Extending Schemas
+
+```json
+{
+  "$ref": "#/$defs/coordinates",
+  "prefixItems": [
+    { "type": "number" },
+    { "type": "number" },
+    { "type": "number" }
+  ],
+  "unevaluatedItems": false,
+  "$defs": {
+    "coordinates": {
+      "prefixItems": [
+        { "type": "number" },
+        { "type": "number" }
+      ]
+    }
+  }
+}
+```
+
+This allows exactly three numbers:
+- First two validated by the referenced schema
+- Third validated by the local `prefixItems`
+- No additional items allowed
+
+### Annotation Result
+
+If the `unevaluatedItems` subschema is applied to any positions within the instance array, it produces an annotation result of boolean `true`, analogous to the behavior of `items`.
+
+<Note>
+Omitting this keyword has the same assertion behavior as an empty schema, meaning unevaluated items are allowed by default.
+</Note>
+
+## unevaluatedProperties
+
+The value of `unevaluatedProperties` must be a valid JSON Schema. This keyword applies to object instances by applying its subschema to the object's property values.
+
+### How It Works
+
+The keyword applies its subschema to any property values which have not been deemed "evaluated." Validation passes if the keyword's subschema validates against all applicable property values.
+
+### Interacting Keywords
+
+The behavior depends on:
+- `properties`
+- `patternProperties`
+- `additionalProperties`
+- `unevaluatedProperties` itself
+- All in-place applicators
+
+### Example: Basic Usage
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "unevaluatedProperties": false
+}
+```
+
+This schema:
+- ✅ Validates: `{"name": "Alice"}`
+- ❌ Rejects: `{"name": "Alice", "age": 30}` ("age" is unevaluated)
+
+### Example: With Composition
+
+```json
+{
+  "allOf": [
+    {
+      "properties": {
+        "name": { "type": "string" }
+      }
+    },
+    {
+      "properties": {
+        "age": { "type": "number" }
+      }
+    }
+  ],
+  "unevaluatedProperties": false
+}
+```
+
+Both "name" and "age" are evaluated by the `allOf` subschemas, so they are allowed. Any other properties would be rejected.
+
+### Example: Extending Base Schemas
+
+```json
+{
+  "$ref": "#/$defs/person",
+  "properties": {
+    "employeeId": { "type": "string" }
+  },
+  "unevaluatedProperties": false,
+  "$defs": {
+    "person": {
+      "properties": {
+        "name": { "type": "string" },
+        "age": { "type": "number" }
+      }
+    }
+  }
+}
+```
+
+This creates an "employee" schema by extending "person":
+- "name" and "age" come from the referenced schema
+- "employeeId" is added locally
+- No other properties are allowed
+
+### Example: Complex Composition
+
+```json
+{
+  "oneOf": [
+    {
+      "properties": {
+        "type": { "const": "user" },
+        "username": { "type": "string" }
+      },
+      "required": ["type", "username"]
+    },
+    {
+      "properties": {
+        "type": { "const": "admin" },
+        "adminLevel": { "type": "number" }
+      },
+      "required": ["type", "adminLevel"]
+    }
+  ],
+  "unevaluatedProperties": false
+}
+```
+
+Depending on which `oneOf` branch validates:
+- User type: allows "type" and "username"
+- Admin type: allows "type" and "adminLevel"
+- No other properties allowed in either case
+
+### Annotation Result
+
+The annotation result of this keyword is the set of instance property names validated by this keyword's subschema.
+
+<Note>
+Omitting this keyword has the same assertion behavior as an empty schema, meaning unevaluated properties are allowed by default.
+</Note>
+
+## Important Considerations
+
+### Evaluation Path Matters
+
+<Warning>
+The evaluation path determines what is considered "evaluated." Properties or items successfully evaluated in one branch of an `anyOf` count as evaluated, even if other branches fail.
+</Warning>
+
+### Dynamic Scope
+
+Unevaluated keywords consider the **dynamic scope** of evaluation, not just the lexical structure. This means:
+
+- They look at schemas encountered during evaluation
+- They follow `$ref` and `$dynamicRef` references
+- They respect the evaluation path, not just the schema structure
+
+### Short-Circuit Evaluation
+
+<Info>
+When `unevaluatedItems` or `unevaluatedProperties` appears in any subschema in the dynamic scope, certain keywords (like `contains`) must evaluate all applicable items to ensure proper tracking of evaluated locations.
+</Info>
+
+### Annotation Collection
+
+These keywords depend on annotation collection from other keywords to determine what has been evaluated. Implementations that don't support annotation collection may not be able to fully support these keywords.
+
+## Common Use Cases
+
+### Creating Closed Schemas
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" }
+  },
+  "required": ["id"],
+  "unevaluatedProperties": false
+}
+```
+
+### Combining Multiple Schemas
+
+```json
+{
+  "allOf": [
+    { "$ref": "#/$defs/base" },
+    { "$ref": "#/$defs/extended" }
+  ],
+  "unevaluatedProperties": false
+}
+```
+
+### Conditional Properties
+
+```json
+{
+  "if": {
+    "properties": {
+      "hasAddress": { "const": true }
+    }
+  },
+  "then": {
+    "properties": {
+      "address": { "type": "string" }
+    }
+  },
+  "properties": {
+    "hasAddress": { "type": "boolean" }
+  },
+  "unevaluatedProperties": false
+}
+```

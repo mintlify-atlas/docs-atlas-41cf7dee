@@ -1,0 +1,189 @@
+---
+title: Decoupling from IETF
+description: Architectural decision to decouple JSON Schema from the IETF standards process
+---
+
+# Decoupling from IETF
+
+**Status**: Accepted  
+**Date**: September 27, 2022  
+**Deciders**: @jdesrosiers, @relequestual, @awwright, @handrews, @gregsdennis
+
+## Overview
+
+This ADR documents the decision to decouple JSON Schema's specification development process from the IETF (Internet Engineering Task Force) and develop an independent specification development lifecycle (SDLC).
+
+## Context and Problem
+
+JSON Schema loosely followed the IETF Internet-Draft (I-D) process but was never formally associated with an IETF working group. As an "individual draft," JSON Schema wasn't on an IETF standards track and received no official IETF support beyond hosting canonical versions of the I-Ds.
+
+This perceived IETF involvement created confusion within the community because JSON Schema's practices differed from typical IETF I-D lifecycles in one critical way: **JSON Schema "drafts" were intended for production use**, unlike typical IETF drafts which are works-in-progress.
+
+<Accordion title="Decision Drivers">
+
+### Process Mismatches
+
+- **Versioning incompatibility**: IETF's draft versioning system doesn't work for JSON Schema. The project switched to date-based versioning and even releases multiple drafts per version (initial + patch releases).
+
+- **Different evolution model**: IETF optimizes for drafting a specification until completion, then disbanding (with rare future revisions). JSON Schema is more like a programming language - it must continuously evolve or lose relevance. When one release finishes, work immediately begins on the next.
+
+- **Production use expectation**: Every JSON Schema release since draft-04's resumption has been intended for production use and will be depended on for years. This contradicts normal IETF draft expectations.
+
+### Perception Problems
+
+- **"Draft" label confusion**: The community repeatedly interpreted "draft" to mean JSON Schema is "incomplete" and "not production-ready." This is exactly the wrong message since all releases are production-ready.
+
+- **Credibility concerns**: While decoupling reduces association with a recognized standards body, feedback indicated that JSON Schema's membership in OpenJS Foundation (part of Linux Foundation) provides equivalent credibility.
+
+### IETF Relationship Challenges
+
+- **Indifference or hostility**: Interactions with JSON-related IETF working groups revealed indifference or preference for alternative approaches to JSON schemas.
+
+- **No active interest**: There was no constructive engagement or active interest from IETF in JSON Schema itself.
+
+- **Potential replacement risk**: JSON Schema team was informed that any IETF schema project for JSON wouldn't necessarily use JSON Schema as a base - a "JSON Schema" working group might not involve JSON Schema at all.
+
+- **Precedent of major changes**: Observations of JSON Path's significant changes during IETF adoption reinforced concerns about process fit.
+
+*Note: The HTTPAPIs working group relationship remained positive despite these other challenges.*
+
+</Accordion>
+
+## Options Considered
+
+<Accordion title="Option 1: Status Quo (Rejected)">
+
+### Approach
+Continue submitting IETF I-Ds using a customized process with no intention of pursuing standards-track RFC status.
+
+### Why Rejected
+This option ignores the problems and provides no solution. It would perpetuate the confusion and process mismatches without any benefits.
+
+</Accordion>
+
+<Accordion title="Option 2: Full IETF Commitment (Rejected)">
+
+### Approach
+Go all-in with IETF and pursue standards-track RFC status. This would involve:
+- Joining an IETF working group
+- Treating drafts as actual drafts (not production-ready)
+- No new production releases until achieving RFC status
+- Defining core essentials with extension mechanisms
+
+### Pros
+- Potential credibility boost from RFC status
+- Expert review process from IETF
+- Other standards can normatively reference RFCs
+
+### Why Rejected
+
+**Timeline concerns**: Core contributors didn't believe JSON Schema was close enough to RFC-ready to commit to not releasing until reaching RFC status. The community needs ongoing production-ready releases.
+
+**Uncertain extension mechanism**: Without a concrete proposal for the RFC scope and extension mechanisms, it's hard to commit to this path. There's skepticism that even with extensions, the RFC wouldn't need regular updates - which is not normal RFC practice and requires significant effort to issue replacing RFCs.
+
+**Process experience**: Many core contributors found working with IETF unproductive and had concerns about deeper involvement without compelling reasons. The reasons weren't sufficiently compelling at this point.
+
+</Accordion>
+
+<Accordion title="Option 3: W3C Standards Track (Rejected)">
+
+### Approach
+Join W3C (World Wide Web Consortium) and pursue standards track using their process.
+
+### Pros
+- No negative history with W3C (unlike IETF)
+- Recognized standards organization
+
+### Why Rejected
+
+**Same core problems**: Has the same fundamental issues as Option 2 - slow release cycles, treating drafts as non-production-ready, and standardization overhead.
+
+**Pay-to-play model**: W3C requires organizations to pay membership fees to contribute to specifications, which conflicts with JSON Schema Org's open ethos. While "invited expert" status exists for individuals whose employers aren't paying members, this is intended as an exception rather than the norm.
+
+**Not ideal fit**: Ben Hutton explored W3C through multiple calls and maintains friendly contacts for potential future consideration, but it wasn't the right fit at this time.
+
+</Accordion>
+
+<Accordion title="Option 4: Independent SDLC (CHOSEN)">
+
+### Approach
+Completely decouple from standards organizations that don't fit JSON Schema's needs and develop an independent specification development lifecycle (SDLC) inspired by well-established projects with similar requirements.
+
+### Why Chosen
+
+**Process alignment**: Allows creating an SDLC that matches JSON Schema's actual needs - continuous evolution, production-ready releases, and appropriate versioning.
+
+**Flexibility**: Freedom to customize processes and iterate on what works without standards organization constraints.
+
+**Immediate improvement**: Resolves current problems even without a complete replacement process defined yet. The team was confident that continuing to misuse IETF I-D or forcing fit with another standards organization was not the path forward.
+
+**Credibility maintained**: OpenJS Foundation (part of Linux Foundation) membership provides equivalent credibility to IETF/W3C association. Feedback from standards developers indicated they're comfortable referencing OpenAPI's self-published specifications due to Linux Foundation membership - same applies to JSON Schema.
+
+</Accordion>
+
+## Decision Outcome
+
+The team chose **Option 4** - decouple from standards organizations and develop an independent SDLC.
+
+### What This Means
+
+- **No more IETF I-Ds**: Main specification documents will no longer follow IETF process
+- **Independent process**: JSON Schema will define its own SDLC inspired by established projects
+- **Production-ready focus**: Releases will clearly signal production readiness without "draft" confusion
+- **Future flexibility**: Standardization with IETF or W3C remains possible in the future when JSON Schema reaches a more stable state
+
+### Important Exceptions
+
+**Media type registration**: JSON Schema will still use IETF process to register media types with IANA. This effort is in progress with the HTTPAPIs working group.
+
+**Supporting components**: Components like Relative JSON Pointer will be examined case-by-case. IETF standards track may make sense for specific components even if not used for main specifications.
+
+## Consequences
+
+### Positive
+
+<Accordion title="Process control and clarity">
+
+- **Custom SDLC**: Can design specification development lifecycle to fit JSON Schema's actual needs
+- **Remove false assumptions**: Distance JSON Schema from assumptions people make about typical IETF I-Ds
+- **Drop "draft" option**: Decoupling enables dropping the confusing "draft" prefix from releases (decided separately)
+- **Faster iteration**: Freedom to evolve at JSON Schema's natural pace
+
+</Accordion>
+
+### Negative
+
+<Accordion title="Tradeoffs and challenges">
+
+- **Lost expert review**: No longer have access to IETF's expert review process
+- **Credibility concerns**: Some may view lack of IETF/W3C association as reducing credibility, though OpenJS Foundation membership addresses this for most stakeholders
+- **Normative references**: While RFCs are easily referenced by other standards, feedback indicates that self-published specifications from OpenJS/Linux Foundation members (like OpenAPI) are equally acceptable
+- **Learning curve**: Defining an SDLC from scratch is significant work with no in-house expertise. However, can learn from established projects and iterate as needed
+
+</Accordion>
+
+## What Happened Next
+
+This decision led directly to the need for a new specification development process, documented in [Stable Specification Process](./stable-spec).
+
+## Related Issues and Discussions
+
+- [GitHub Discussion #69](https://github.com/orgs/json-schema-org/discussions/69) - Dropping the "draft" prefix (contains much of the IETF decoupling discussion)
+- Multiple discussions in Slack, Twitter, Open Community Working Meetings (OCWMs), and conferences
+
+## Further Context
+
+### About IETF Internet-Drafts
+
+IETF I-Ds are:
+- Working documents for developing internet standards
+- Valid for 6 months and must be updated or expire
+- Not intended for production use until becoming RFCs
+- Typically on a standards track toward becoming RFCs
+- Subject to IETF process and working group consensus
+
+JSON Schema's use of the I-D system was non-standard because releases were production-ready and intended for long-term use.
+
+### JSON Schema as a "Living Specification"
+
+JSON Schema is better understood as a living specification (like HTML) that continuously evolves while maintaining production stability, rather than a draft working toward a final unchanging standard.

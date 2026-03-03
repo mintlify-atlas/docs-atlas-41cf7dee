@@ -1,0 +1,387 @@
+---
+title: Array Validation
+description: Keywords for validating array length and uniqueness
+---
+
+JSON Schema provides several keywords for validating array instances.
+
+## minItems
+
+Specifies the minimum number of items in an array.
+
+### Syntax
+
+The value must be a non-negative integer.
+
+```json
+{
+  "minItems": 1
+}
+```
+
+### Validation Rules
+
+An array instance is valid if its size (number of elements) is greater than or equal to the specified value.
+
+### Default Behavior
+
+Omitting `minItems` is equivalent to `minItems: 0`, which allows empty arrays.
+
+### Examples
+
+#### Non-Empty Array
+
+```json
+{
+  "type": "array",
+  "minItems": 1
+}
+```
+
+Valid instances:
+```json
+[1]
+[1, 2, 3]
+["a", "b"]
+```
+
+Invalid instances:
+```json
+[]
+```
+
+#### At Least Two Items
+
+```json
+{
+  "type": "array",
+  "minItems": 2
+}
+```
+
+Valid instances:
+```json
+[1, 2]
+[1, 2, 3, 4]
+["a", "b"]
+```
+
+Invalid instances:
+```json
+[]
+[1]
+```
+
+## maxItems
+
+Specifies the maximum number of items in an array.
+
+### Syntax
+
+The value must be a non-negative integer.
+
+```json
+{
+  "maxItems": 10
+}
+```
+
+### Validation Rules
+
+An array instance is valid if its size (number of elements) is less than or equal to the specified value.
+
+### Examples
+
+#### Limited Array Size
+
+```json
+{
+  "type": "array",
+  "maxItems": 5
+}
+```
+
+Valid instances:
+```json
+[]
+[1]
+[1, 2, 3, 4, 5]
+```
+
+Invalid instances:
+```json
+[1, 2, 3, 4, 5, 6]
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+#### Single Item Array
+
+```json
+{
+  "type": "array",
+  "maxItems": 1
+}
+```
+
+Valid instances:
+```json
+[]
+[42]
+```
+
+Invalid instances:
+```json
+[1, 2]
+["a", "b"]
+```
+
+## uniqueItems
+
+Requires that all items in an array be unique.
+
+### Syntax
+
+The value must be a boolean.
+
+```json
+{
+  "uniqueItems": true
+}
+```
+
+### Validation Rules
+
+- If `uniqueItems` is `false`, the instance validates successfully (duplicates allowed)
+- If `uniqueItems` is `true`, the instance validates successfully only if all elements are unique
+
+### Default Behavior
+
+Omitting `uniqueItems` is equivalent to `uniqueItems: false`, which allows duplicates.
+
+### Equality
+
+Elements are considered equal according to the equality rules defined in the JSON Schema Core specification.
+
+### Examples
+
+#### Unique Numbers
+
+```json
+{
+  "type": "array",
+  "uniqueItems": true
+}
+```
+
+Valid instances:
+```json
+[1, 2, 3, 4]
+[]
+[1]
+["a", "b", "c"]
+```
+
+Invalid instances:
+```json
+[1, 2, 2, 3]
+["a", "b", "a"]
+```
+
+#### Unique Objects
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "object"
+  },
+  "uniqueItems": true
+}
+```
+
+Valid instances:
+```json
+[
+  {"id": 1, "name": "Alice"},
+  {"id": 2, "name": "Bob"}
+]
+```
+
+Invalid instances:
+```json
+[
+  {"id": 1, "name": "Alice"},
+  {"id": 1, "name": "Alice"}
+]
+```
+
+#### Mixed Type Array
+
+```json
+{
+  "type": "array",
+  "uniqueItems": true
+}
+```
+
+Valid instances:
+```json
+[1, "1", true, null]
+[{"a": 1}, {"a": 2}]
+```
+
+Invalid instances:
+```json
+[1, 1]
+[true, true]
+[null, null]
+```
+
+## Combining Array Keywords
+
+Multiple array validation keywords can be used together to define precise constraints.
+
+### Size Range
+
+```json
+{
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 10
+}
+```
+
+This validates arrays with 1 to 10 items:
+```json
+[1]
+[1, 2, 3]
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+```
+
+### Unique Tags
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "string"
+  },
+  "minItems": 1,
+  "maxItems": 5,
+  "uniqueItems": true
+}
+```
+
+This validates an array of 1-5 unique strings:
+```json
+["javascript"]
+["javascript", "typescript", "python"]
+```
+
+Invalid:
+```json
+[]                                    // Too few items
+["js", "js"]                          // Not unique
+["a", "b", "c", "d", "e", "f"]       // Too many items
+```
+
+### Coordinates (Pair)
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "number"
+  },
+  "minItems": 2,
+  "maxItems": 2
+}
+```
+
+This validates exactly 2 numeric coordinates:
+```json
+[10.5, 20.3]
+[-73.935242, 40.730610]
+```
+
+Invalid:
+```json
+[10]           // Too few
+[10, 20, 30]   // Too many
+```
+
+### Team Members
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "team": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "name": {"type": "string"}
+        },
+        "required": ["id", "name"]
+      },
+      "minItems": 2,
+      "maxItems": 10,
+      "uniqueItems": true
+    }
+  }
+}
+```
+
+Valid instance:
+```json
+{
+  "team": [
+    {"id": 1, "name": "Alice"},
+    {"id": 2, "name": "Bob"},
+    {"id": 3, "name": "Charlie"}
+  ]
+}
+```
+
+### Fixed Size Array
+
+```json
+{
+  "type": "array",
+  "minItems": 3,
+  "maxItems": 3
+}
+```
+
+This validates arrays with exactly 3 items:
+```json
+[1, 2, 3]
+["a", "b", "c"]
+[true, false, null]
+```
+
+### Optional Array
+
+```json
+{
+  "type": "array",
+  "maxItems": 5,
+  "uniqueItems": true
+}
+```
+
+This allows empty arrays or up to 5 unique items:
+```json
+[]
+[1]
+[1, 2, 3, 4, 5]
+```
+
+## Use Cases
+
+- **minItems**: Ensure at least one selection (e.g., order items, selected options)
+- **maxItems**: Limit number of tags, attachments, or choices
+- **uniqueItems**: Prevent duplicate selections, tags, or IDs
+- **Combined**: Define precise constraints like "select 3-5 unique categories"

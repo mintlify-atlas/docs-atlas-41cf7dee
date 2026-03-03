@@ -1,0 +1,384 @@
+---
+title: examples
+description: Provide sample JSON values to illustrate the usage of a schema
+---
+
+The `examples` keyword provides an array of sample JSON values that demonstrate valid instances for a schema. These examples help developers understand how to use the schema in practice.
+
+## Syntax
+
+The value of `examples` must be an array. There are no restrictions on the values within the array.
+
+```json
+{
+  "examples": []
+}
+```
+
+## Purpose
+
+The `examples` keyword is a metadata annotation that:
+
+- Provides sample JSON values associated with a schema
+- Illustrates typical or valid usage patterns
+- Helps generate documentation and API explorers
+- Can be used by tools to generate test data or mock responses
+- Has no effect on validation (it is purely informational)
+- Should contain values that are valid against the schema (recommended)
+
+## Behavior
+
+When multiple occurrences of the `examples` keyword are applicable to a single sub-instance, implementations must provide a flat array of all values rather than an array of arrays.
+
+Implementations may use the value of the `default` keyword, if present, as an additional example. If `examples` is absent, `default` may still be used as an example.
+
+## Examples
+
+### Basic String Examples
+
+```json
+{
+  "type": "string",
+  "title": "Email Address",
+  "format": "email",
+  "examples": [
+    "user@example.com",
+    "admin@company.org",
+    "contact@domain.co.uk"
+  ]
+}
+```
+
+Multiple examples show the variety of valid email formats.
+
+### Numeric Examples
+
+```json
+{
+  "type": "number",
+  "title": "Price",
+  "description": "Product price in USD",
+  "minimum": 0,
+  "examples": [
+    9.99,
+    49.95,
+    199.00,
+    0.50
+  ]
+}
+```
+
+Examples demonstrate typical price values including edge cases like very low prices.
+
+### Object Examples
+
+```json
+{
+  "type": "object",
+  "title": "User",
+  "properties": {
+    "username": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": ["username", "email"],
+  "examples": [
+    {
+      "username": "johndoe",
+      "email": "john@example.com",
+      "age": 30
+    },
+    {
+      "username": "janedoe",
+      "email": "jane@example.com",
+      "age": 25
+    },
+    {
+      "username": "newuser",
+      "email": "new@example.com"
+    }
+  ]
+}
+```
+
+Object examples show complete valid instances, including optional fields (the third example omits `age`).
+
+### Array Examples
+
+```json
+{
+  "type": "array",
+  "title": "Tags",
+  "items": {
+    "type": "string"
+  },
+  "minItems": 1,
+  "uniqueItems": true,
+  "examples": [
+    ["javascript", "nodejs", "backend"],
+    ["python", "data-science", "machine-learning"],
+    ["documentation"]
+  ]
+}
+```
+
+Array examples demonstrate different valid configurations, including the minimum case.
+
+### Enum with Examples
+
+```json
+{
+  "type": "string",
+  "title": "Status",
+  "enum": ["draft", "published", "archived"],
+  "examples": [
+    "draft",
+    "published"
+  ]
+}
+```
+
+Examples show the most commonly used enum values.
+
+### Complex Nested Object
+
+```json
+{
+  "type": "object",
+  "title": "Product",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "properties": {
+        "quantity": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warehouse": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Wireless Mouse",
+      "price": 29.99,
+      "tags": ["electronics", "accessories", "wireless"],
+      "inventory": {
+        "quantity": 150,
+        "warehouse": "US-WEST-1"
+      }
+    },
+    {
+      "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+      "name": "USB-C Cable",
+      "price": 12.99,
+      "tags": ["cables", "usb-c"],
+      "inventory": {
+        "quantity": 500,
+        "warehouse": "US-EAST-1"
+      }
+    }
+  ]
+}
+```
+
+Complex examples show realistic, complete data structures.
+
+### API Request Body
+
+```json
+{
+  "type": "object",
+  "title": "Create Order Request",
+  "properties": {
+    "customerId": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "shippingAddress": {
+      "type": "object",
+      "properties": {
+        "street": {"type": "string"},
+        "city": {"type": "string"},
+        "country": {"type": "string"},
+        "postalCode": {"type": "string"}
+      }
+    }
+  },
+  "examples": [
+    {
+      "customerId": "cust_123456",
+      "items": [
+        {
+          "productId": "prod_abc",
+          "quantity": 2
+        },
+        {
+          "productId": "prod_xyz",
+          "quantity": 1
+        }
+      ],
+      "shippingAddress": {
+        "street": "123 Main St",
+        "city": "Springfield",
+        "country": "USA",
+        "postalCode": "12345"
+      }
+    }
+  ]
+}
+```
+
+API examples show realistic request payloads that can be used in documentation.
+
+### Date and Time Examples
+
+```json
+{
+  "type": "string",
+  "title": "Appointment Time",
+  "format": "date-time",
+  "examples": [
+    "2024-03-15T14:30:00Z",
+    "2024-03-15T09:00:00-05:00",
+    "2024-12-31T23:59:59.999Z"
+  ]
+}
+```
+
+Date-time examples show various timezone representations.
+
+### Pattern Examples
+
+```json
+{
+  "type": "string",
+  "title": "Product Code",
+  "pattern": "^[A-Z]{3}-\\d{4}$",
+  "examples": [
+    "ABC-1234",
+    "XYZ-9876",
+    "DEF-0001"
+  ]
+}
+```
+
+Examples clarify the expected pattern format.
+
+### Using Default as an Example
+
+```json
+{
+  "type": "integer",
+  "title": "Items Per Page",
+  "minimum": 1,
+  "maximum": 100,
+  "default": 20,
+  "examples": [
+    10,
+    50,
+    100
+  ]
+}
+```
+
+The `default` value (20) can be used as an additional example by implementations.
+
+## Best Practices
+
+### Provide Multiple Examples
+
+Show different valid cases, including edge cases:
+
+```json
+{
+  "type": "string",
+  "title": "Username",
+  "minLength": 3,
+  "maxLength": 20,
+  "pattern": "^[a-zA-Z0-9_-]+$",
+  "examples": [
+    "user123",
+    "john_doe",
+    "admin-user",
+    "abc"
+  ]
+}
+```
+
+### Ensure Examples Are Valid
+
+All examples should validate against the schema:
+
+```json
+{
+  "type": "number",
+  "minimum": 0,
+  "maximum": 100,
+  "examples": [
+    0,
+    50,
+    100
+  ]
+}
+```
+
+### Show Real-World Values
+
+Use realistic data rather than placeholders:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "firstName": {"type": "string"},
+    "lastName": {"type": "string"}
+  },
+  "examples": [
+    {"firstName": "Alice", "lastName": "Johnson"},
+    {"firstName": "Bob", "lastName": "Smith"}
+  ]
+}
+```

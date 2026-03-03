@@ -1,0 +1,228 @@
+---
+title: Core Definitions and Terminology
+description: Essential definitions and terminology used throughout the JSON Schema specification
+---
+
+## JSON Document
+
+In JSON Schema, the terms "JSON document", "JSON data", "JSON text", and "JSON value" are interchangeable and refer to the data model defined by [RFC 8259](https://www.rfc-editor.org/info/rfc8259).
+
+JSON Schema is only defined over JSON documents. However, any document or memory structure that can be parsed into or processed according to the JSON Schema data model can be interpreted against a JSON Schema.
+
+## Instance
+
+A JSON document to which a schema is applied is known as a "JSON instance" or just an "instance".
+
+### Instance Data Model
+
+JSON Schema interprets documents according to a data model. A JSON value interpreted according to this data model is called an "instance".
+
+An instance has one of **six primitive types**, each with a range of possible values:
+
+<AccordionGroup>
+  <Accordion title="null">
+    A JSON "null" value
+  </Accordion>
+  
+  <Accordion title="boolean">
+    A "true" or "false" value, from the JSON "true" or "false" value
+  </Accordion>
+  
+  <Accordion title="object">
+    An unordered set of properties mapping a string to an instance, from the JSON "object" value
+  </Accordion>
+  
+  <Accordion title="array">
+    An ordered list of instances, from the JSON "array" value
+  </Accordion>
+  
+  <Accordion title="number">
+    An arbitrary-precision, base-10 decimal number value, from the JSON "number" value
+  </Accordion>
+  
+  <Accordion title="string">
+    A string of Unicode code points, from the JSON "string" value
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Whitespace and formatting concerns, including different lexical representations of numbers that are equal within the data model, are outside the scope of JSON Schema.
+</Warning>
+
+### Instance Equality
+
+Two JSON instances are said to be equal if and only if they are of the same type and have the same value according to the data model. Specifically:
+
+- Both are null; or
+- Both are true; or
+- Both are false; or
+- Both are strings, and are the same codepoint-for-codepoint; or
+- Both are numbers, and have the same mathematical value; or
+- Both are arrays, and have an equal value item-for-item; or
+- Both are objects, and each property in one has exactly one property with a key equal to the other's, and that other property has an equal value
+
+Implied in this definition:
+
+- Arrays must be the same length
+- Objects must have the same number of members
+- Properties in objects are unordered
+- There is no way to define multiple properties with the same key
+- Mere formatting differences (indentation, placement of commas, trailing zeros) are insignificant
+
+### Non-JSON Instances
+
+It is possible to use JSON Schema with a superset of the JSON Schema data model, where an instance may be outside any of the six JSON data types.
+
+In this case:
+
+- Annotations still apply
+- Most validation keywords will not be useful, as they will always pass or always fail
+
+An extension may define support for a superset of the core data model. The schema itself may only be expressible in this superset (for example, to make use of the `const` keyword).
+
+## JSON Schema Documents
+
+A JSON Schema document, or simply a schema, is used to describe an instance. A schema can itself be interpreted as an instance.
+
+<Note>
+A JSON Schema MUST be an object or a boolean.
+</Note>
+
+### JSON Schema Objects and Keywords
+
+Object properties that are applied to the instance are called **keywords** or **schema keywords**. Keywords fall into five categories:
+
+<CardGroup cols={2}>
+  <Card title="Identifiers" icon="fingerprint">
+    Control schema identification through setting an IRI for the schema and/or changing how the base IRI is determined
+  </Card>
+  
+  <Card title="Assertions" icon="check-circle">
+    Produce a boolean result when applied to an instance
+  </Card>
+  
+  <Card title="Annotations" icon="tags">
+    Attach information to an instance for application use
+  </Card>
+  
+  <Card title="Applicators" icon="share-nodes">
+    Apply one or more subschemas to a particular location in the instance, and combine or modify their results
+  </Card>
+  
+  <Card title="Reserved Locations" icon="bookmark">
+    Do not directly affect results, but reserve a place for a specific purpose to ensure interoperability
+  </Card>
+</CardGroup>
+
+Keywords may fall into multiple categories, although applicators SHOULD only produce assertion results based on their subschemas' results.
+
+**Adjacent keywords** are keywords within the same schema object.
+
+<Info>
+A JSON Schema MUST NOT contain properties which are not schema keywords or are not recognized as schema keywords. An **empty schema** is a JSON Schema with no properties.
+</Info>
+
+### Boolean JSON Schemas
+
+The boolean schema values `true` and `false` are trivial schemas that always produce themselves as assertion results, regardless of the instance value. They never produce annotation results.
+
+These boolean schemas exist to:
+
+- Clarify schema author intent
+- Facilitate schema processing optimizations
+
+They behave identically to the following schema objects:
+
+```json
+// true: Always passes validation
+{}
+
+// false: Always fails validation
+{ "not": {} }
+```
+
+### Meta-Schemas
+
+A **meta-schema** is a schema that describes another schema. Meta-schemas are used to:
+
+- Validate JSON Schemas
+- Specify the set of keywords those schemas are using
+
+Every schema has a meta-schema, which can be explicitly declared using the `$schema` keyword.
+
+### Root Schema, Subschemas, and Resources
+
+A **JSON Schema resource** is a schema which is canonically identified by an absolute IRI (without fragments). Schema resources MAY also be identified by IRIs with fragments, if the resulting secondary resource is identical to the primary resource.
+
+A **root schema** is the top-level schema that is identified by an absolute IRI. The root schema is always a schema resource.
+
+Some keywords take schemas themselves, allowing JSON Schemas to be nested:
+
+```json
+{
+  "title": "root",
+  "items": {
+    "title": "array item"
+  }
+}
+```
+
+In this example:
+
+- The schema titled "root" is the root schema
+- The schema titled "array item" is a subschema
+
+As with the root schema, a **subschema** is either an object or a boolean.
+
+<Note>
+A JSON Schema document can contain multiple JSON Schema resources. A resource's root schema is its top-level schema object.
+</Note>
+
+## General Considerations
+
+### Range of JSON Values
+
+An instance may be any valid JSON value as defined by [RFC 8259](https://www.rfc-editor.org/info/rfc8259). JSON Schema imposes no restrictions on type: JSON Schema can describe any JSON value, including null.
+
+### Programming Language Independence
+
+JSON Schema is programming language agnostic and supports the full range of values described in the data model. However, be aware that:
+
+- Some languages and JSON parsers may not be able to represent in memory the full range of values describable by JSON
+- Number precision and representation may vary across implementations
+
+### Regular Expressions
+
+Keywords MAY use regular expressions to express constraints. These regular expressions SHOULD be valid according to [ECMA-262, section 21.2.1](https://www.ecma-international.org/ecma-262/11.0/index.html).
+
+<Warning>
+Unless otherwise specified by a keyword, regular expressions MUST NOT be considered to be implicitly anchored at either end. All regular expression keywords in this specification are un-anchored.
+</Warning>
+
+Regular expressions SHOULD be built with the "u" flag (or equivalent) to provide Unicode support.
+
+Schema authors SHOULD limit themselves to these regular expression tokens for maximum compatibility:
+
+- Individual Unicode code points
+- Simple atoms: `.` (any character except line terminator)
+- Simple character classes (`[abc]`), range character classes (`[a-z]`)
+- Complemented classes (`[^abc]`, `[^a-z]`)
+- Simple quantifiers: `+`, `*`, `?`, and their non-greedy versions (`+?`, `*?`, `??`)
+- Range quantifiers: `{x}`, `{x,y}`, `{x,}`, and their non-greedy versions
+- Anchors: `^` (beginning-of-input) and `$` (end-of-input)
+- Simple grouping (`(` and `)`) and alternation (`|`)
+
+<Tip>
+Implementations MUST NOT take regular expressions to be anchored. For instance, the pattern "es" matches "expression".
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Keywords" href="./keywords" icon="key">
+    Explore keyword behaviors and categories
+  </Card>
+  <Card title="Schemas" href="./schemas" icon="sitemap">
+    Learn about schema structure and composition
+  </Card>
+</CardGroup>

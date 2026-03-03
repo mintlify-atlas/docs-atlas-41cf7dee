@@ -1,0 +1,313 @@
+---
+title: contains
+description: Require array elements matching a schema
+---
+
+The `contains` keyword validates that an array instance has a specified number of elements that match its schema. Unlike `items`, which validates element positions, `contains` validates based on matching count.
+
+## Syntax
+
+```json
+{
+  "contains": { /* schema that elements must match */ },
+  "minContains": 1,
+  "maxContains": 5
+}
+```
+
+The `contains` value must be a valid JSON Schema. The `minContains` and `maxContains` values must be non-negative integers.
+
+## Behavior
+
+An instance array is valid against `contains` if the number of elements that validate successfully against its schema falls within the specified range:
+
+- **Default minimum**: 1 (if `minContains` is absent)
+- **Default maximum**: unbounded (if `maxContains` is absent)
+- The `contains` schema is applied to each array element
+- Validation succeeds if the count of matching elements is within `[minContains, maxContains]`
+- Produces an annotation with the array of matching element indices (or boolean `true` if all match)
+- Affects the behavior of `unevaluatedItems`
+
+## Examples
+
+### Basic Contains
+
+Require at least one string element:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "string"
+  }
+}
+```
+
+Valid: `[1, 2, "hello"]`, `["a", "b"]`  
+Invalid: `[1, 2, 3]`, `[]`
+
+### Exact Count
+
+Require exactly 2 matching elements:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "number",
+    "minimum": 10
+  },
+  "minContains": 2,
+  "maxContains": 2
+}
+```
+
+Valid: `[5, 15, 20, 8]`  
+Invalid: `[15]` (too few), `[15, 20, 25]` (too many)
+
+### Range of Matches
+
+Require between 1 and 3 matching elements:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "object",
+    "properties": {
+      "role": { "const": "admin" }
+    },
+    "required": ["role"]
+  },
+  "minContains": 1,
+  "maxContains": 3
+}
+```
+
+Valid:
+```json
+[
+  { "role": "user" },
+  { "role": "admin" },
+  { "role": "guest" }
+]
+```
+
+Invalid: Array with 0 or more than 3 admins
+
+### At Least N Matches
+
+Require minimum count with no upper limit:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "string",
+    "pattern": "^[A-Z]"
+  },
+  "minContains": 3
+}
+```
+
+Valid: `["Apple", "banana", "Cherry", "Date", "eggplant"]` (3+ capitalized)  
+Invalid: `["Apple", "banana"]` (only 1 capitalized)
+
+### At Most N Matches
+
+Limit maximum occurrences:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "null"
+  },
+  "minContains": 0,
+  "maxContains": 2
+}
+```
+
+Valid: `[1, 2, 3]`, `[1, null, 2]`, `[null, null]`  
+Invalid: `[null, null, null]`
+
+Note: `minContains: 0` makes the constraint optional.
+
+### Complex Element Matching
+
+Match elements with complex criteria:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "object",
+    "properties": {
+      "status": { "const": "active" },
+      "priority": { "type": "integer", "minimum": 8 }
+    },
+    "required": ["status", "priority"]
+  },
+  "minContains": 1
+}
+```
+
+Valid:
+```json
+[
+  { "status": "active", "priority": 9 },
+  { "status": "inactive", "priority": 5 },
+  { "status": "active", "priority": 3 }
+]
+```
+
+At least one item is active with priority ≥ 8.
+
+### Tags Validation
+
+Ensure specific tags are present:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "contains": {
+        "enum": ["important", "urgent", "critical"]
+      },
+      "minContains": 1
+    }
+  }
+}
+```
+
+Valid:
+```json
+{
+  "tags": ["bug", "urgent", "frontend"]
+}
+```
+
+Invalid:
+```json
+{
+  "tags": ["bug", "frontend"]
+}
+```
+
+### Search Results
+
+Validate that search results contain relevant matches:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "results": {
+      "type": "array",
+      "contains": {
+        "type": "object",
+        "properties": {
+          "score": { "type": "number", "minimum": 0.8 }
+        },
+        "required": ["score"]
+      },
+      "minContains": 1
+    }
+  }
+}
+```
+
+Ensures at least one high-confidence result.
+
+### Optional Contains
+
+Make contains optional by setting `minContains: 0`:
+
+```json
+{
+  "type": "array",
+  "contains": {
+    "type": "string",
+    "format": "email"
+  },
+  "minContains": 0,
+  "maxContains": 1
+}
+```
+
+Valid: `[]`, `["user@example.com"]`, `[1, 2, 3]`  
+Invalid: `["a@ex.com", "b@ex.com"]` (too many emails)
+
+## Annotations
+
+The `contains` keyword produces an annotation value which is:
+
+- An **array of zero-based indices** for elements that validated successfully against the contains schema
+- Boolean **true** if the schema validates successfully for every element
+- The annotation is present even for empty arrays
+
+Example annotation for `["a", 1, "b", 2]` with `contains: {"type": "string"}`:
+```json
+[0, 2]
+```
+
+## Interaction with unevaluatedItems
+
+The `contains` annotation affects `unevaluatedItems` by marking matching elements as evaluated. This must be considered when both keywords are present:
+
+```json
+{
+  "type": "array",
+  "contains": { "type": "string" },
+  "unevaluatedItems": false
+}
+```
+
+Valid: `["hello"]` (all items are strings, evaluated by contains)  
+Invalid: `["hello", 123]` (123 is unevaluated)
+
+## Short-Circuit Evaluation
+
+Under most circumstances, evaluation can be short-circuited once the required count is met. However, `contains` **must** be applied to every element when:
+
+- `unevaluatedItems` appears anywhere in the dynamic scope
+- Annotations are being collected
+
+This ensures all matching indices are recorded.
+
+## Comparison with items
+
+| Keyword | Validates | Use Case |
+|---------|-----------|----------|
+| `items` | All elements or positional elements | Homogeneous arrays, tuples |
+| `contains` | Count of elements matching schema | "At least N items match" |
+
+## Common Use Cases
+
+- **Required elements**: Ensure arrays contain specific types of elements
+- **Cardinality constraints**: Limit occurrences of matching elements
+- **Search validation**: Verify search results contain relevant matches
+- **Tag requirements**: Ensure specific tags/labels are present
+- **Quality checks**: Require minimum number of high-quality items
+- **Partial validation**: Validate subset of array elements
+
+## Notes
+
+- Default `minContains` is 1 when absent (not 0)
+- Explicitly set `minContains: 0` to make matching optional
+- `maxContains` without `minContains` means "at most N" matches (with default minimum of 1)
+- Empty arrays fail validation unless `minContains: 0`
+- The `contains` keyword applies to arrays only
+- For non-array instances, `contains` always passes
+
+## Best Practices
+
+- Use `contains` when you care about "how many match" not "what position"
+- Always specify both `minContains` and `maxContains` for clarity
+- Set `minContains: 0` explicitly when matches are optional
+- Combine with `items` when you need both positional and count-based validation
+- Use clear, specific schemas in `contains` to avoid ambiguity
+- Consider performance: complex `contains` schemas on large arrays can be expensive

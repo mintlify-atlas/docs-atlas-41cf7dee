@@ -1,0 +1,190 @@
+---
+title: const
+description: Require a single specific value
+---
+
+The `const` keyword restricts an instance to a single, specific value.
+
+## Syntax
+
+The value of `const` may be of any type, including `null`.
+
+```json
+{
+  "const": value
+}
+```
+
+## Validation Rules
+
+An instance validates successfully if its value is equal to the value specified in the `const` keyword.
+
+Equality is determined using the rules defined in the JSON Schema Core specification.
+
+## Relationship to enum
+
+Using `const` is functionally equivalent to using `enum` with a single-element array:
+
+```json
+{"const": "value"}
+```
+
+is equivalent to:
+
+```json
+{"enum": ["value"]}
+```
+
+## Examples
+
+### String Constant
+
+```json
+{
+  "const": "United States"
+}
+```
+
+Valid instance:
+```json
+"United States"
+```
+
+Invalid instances:
+```json
+"united states"
+"USA"
+"US"
+```
+
+### Numeric Constant
+
+```json
+{
+  "const": 42
+}
+```
+
+Valid instance:
+```json
+42
+```
+
+Invalid instances:
+```json
+"42"
+42.0
+43
+```
+
+### Boolean Constant
+
+```json
+{
+  "const": true
+}
+```
+
+Valid instance:
+```json
+true
+```
+
+Invalid instances:
+```json
+false
+"true"
+1
+```
+
+### Null Constant
+
+```json
+{
+  "const": null
+}
+```
+
+Valid instance:
+```json
+null
+```
+
+Invalid instances:
+```json
+""
+0
+false
+```
+
+### Object Constant
+
+```json
+{
+  "const": {
+    "version": "1.0.0",
+    "protocol": "https"
+  }
+}
+```
+
+Valid instance:
+```json
+{
+  "version": "1.0.0",
+  "protocol": "https"
+}
+```
+
+Invalid instances:
+```json
+{"version": "1.0.0"}
+{"version": "1.0.0", "protocol": "https", "extra": true}
+```
+
+### Array Constant
+
+```json
+{
+  "const": [1, 2, 3]
+}
+```
+
+Valid instance:
+```json
+[1, 2, 3]
+```
+
+Invalid instances:
+```json
+[1, 2]
+[1, 2, 3, 4]
+[3, 2, 1]
+```
+
+### API Version
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "apiVersion": {
+      "const": "v2"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "required": ["apiVersion"]
+}
+```
+
+This ensures all instances must use API version "v2".
+
+## Use Cases
+
+- Enforcing specific API versions
+- Requiring exact configuration values
+- Discriminating between schema variants
+- Defining literal values in conditional schemas
+- Ensuring backwards compatibility by requiring specific field values

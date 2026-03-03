@@ -1,0 +1,140 @@
+---
+title: enum
+description: Restrict values to a fixed set of options
+---
+
+The `enum` keyword restricts an instance to a fixed set of allowed values.
+
+## Syntax
+
+The value of `enum` must be an array. This array should have at least one element, and elements should be unique.
+
+```json
+{
+  "enum": [value1, value2, value3, ...]
+}
+```
+
+## Validation Rules
+
+An instance validates successfully if its value is equal to one of the elements in the `enum` array.
+
+Equality is determined using the rules defined in the JSON Schema Core specification.
+
+## Examples
+
+### String Values
+
+```json
+{
+  "enum": ["red", "green", "blue"]
+}
+```
+
+Valid instances:
+```json
+"red"
+"green"
+"blue"
+```
+
+Invalid instances:
+```json
+"yellow"
+"Red"
+"RED"
+```
+
+### Numeric Values
+
+```json
+{
+  "enum": [1, 2, 3, 5, 8, 13]
+}
+```
+
+Valid instances:
+```json
+1
+5
+13
+```
+
+Invalid instances:
+```json
+4
+6
+"5"
+```
+
+### Mixed Types
+
+```json
+{
+  "enum": ["active", "inactive", null, 0, false]
+}
+```
+
+Valid instances:
+```json
+"active"
+null
+0
+false
+```
+
+Invalid instances:
+```json
+"unknown"
+true
+1
+```
+
+### Status Codes
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "enum": ["pending", "approved", "rejected"]
+    },
+    "priority": {
+      "enum": [1, 2, 3, 4, 5]
+    }
+  }
+}
+```
+
+Valid instance:
+```json
+{
+  "status": "approved",
+  "priority": 3
+}
+```
+
+### Complex Values
+
+```json
+{
+  "enum": [
+    {"type": "success", "code": 200},
+    {"type": "error", "code": 400},
+    {"type": "error", "code": 500}
+  ]
+}
+```
+
+Valid instances:
+```json
+{"type": "success", "code": 200}
+{"type": "error", "code": 400}
+```
+
+## Notes
+
+- Elements in the array can be of any type, including `null`
+- String matching is case-sensitive
+- While elements should be unique, duplicate values will be treated as the same constraint
+- The `enum` keyword is useful for defining finite sets of valid values like status codes, categories, or configuration options

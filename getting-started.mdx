@@ -1,0 +1,518 @@
+---
+title: Getting Started with JSON Schema
+description: Create your first JSON Schema and learn how to validate JSON data with a practical, working example.
+---
+
+# Getting Started with JSON Schema
+
+This guide walks you through creating your first JSON Schema and using it to validate JSON data. By the end, you'll understand how to write schemas and apply them to real-world use cases.
+
+## Prerequisites
+
+You should be familiar with:
+- JSON syntax and data structures
+- Basic programming concepts
+
+<Note>
+No special tools are required to write a JSON Schema - it's just JSON! However, you'll need a JSON Schema validator to test your schemas.
+</Note>
+
+## Your First Schema
+
+Let's create a schema that validates a simple user profile. We'll build it step by step.
+
+### Step 1: Declare the Schema Version
+
+Every schema should declare which JSON Schema version it uses with the `$schema` keyword:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026"
+}
+```
+
+This tells validators how to interpret the schema.
+
+### Step 2: Define the Root Type
+
+For a user profile object, we specify that the root must be an object:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object"
+}
+```
+
+### Step 3: Add Properties
+
+Now let's define the properties our user object can have:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 20
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 120
+    },
+    "isActive": {
+      "type": "boolean"
+    }
+  }
+}
+```
+
+### Step 4: Specify Required Properties
+
+Let's make `username` and `email` required:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 20
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 120
+    },
+    "isActive": {
+      "type": "boolean"
+    }
+  },
+  "required": ["username", "email"]
+}
+```
+
+### Step 5: Add Metadata
+
+Annotations like `title` and `description` make your schema self-documenting:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "$id": "https://example.com/schemas/user-profile.json",
+  "title": "User Profile",
+  "description": "A user profile in the system",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "The user's unique username",
+      "minLength": 3,
+      "maxLength": 20
+    },
+    "email": {
+      "type": "string",
+      "description": "The user's email address",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "description": "The user's age in years",
+      "minimum": 0,
+      "maximum": 120
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Whether the user account is active",
+      "default": true
+    }
+  },
+  "required": ["username", "email"]
+}
+```
+
+## Complete Example
+
+Here's the complete schema with test instances:
+
+<CodeGroup>
+```json Schema
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "$id": "https://example.com/schemas/user-profile.json",
+  "title": "User Profile",
+  "description": "A user profile in the system",
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "description": "The user's unique username",
+      "minLength": 3,
+      "maxLength": 20
+    },
+    "email": {
+      "type": "string",
+      "description": "The user's email address",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "description": "The user's age in years",
+      "minimum": 0,
+      "maximum": 120
+    },
+    "isActive": {
+      "type": "boolean",
+      "description": "Whether the user account is active",
+      "default": true
+    }
+  },
+  "required": ["username", "email"]
+}
+```
+
+```json Valid Instance
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "age": 30,
+  "isActive": true
+}
+```
+
+```json Invalid Instance (missing required field)
+{
+  "username": "johndoe",
+  "age": 30
+}
+```
+
+```json Invalid Instance (constraint violation)
+{
+  "username": "jd",
+  "email": "john@example.com",
+  "age": 150
+}
+```
+</CodeGroup>
+
+## Validation Scenarios
+
+<Steps>
+  <Step title="Valid Instance">
+    An instance with `username` and `email` (both required), plus optional `age` and `isActive` fields matching their constraints.
+    
+    ```json
+    {
+      "username": "johndoe",
+      "email": "john@example.com",
+      "age": 30,
+      "isActive": true
+    }
+    ```
+    
+    Result: **VALID** - All required fields present, all constraints satisfied.
+  </Step>
+  
+  <Step title="Missing Required Field">
+    An instance missing the `email` field:
+    
+    ```json
+    {
+      "username": "johndoe",
+      "age": 30
+    }
+    ```
+    
+    Result: **INVALID** - The `required` keyword specifies that `email` must be present.
+  </Step>
+  
+  <Step title="Constraint Violation">
+    An instance with `username` too short and `age` too high:
+    
+    ```json
+    {
+      "username": "jd",
+      "email": "john@example.com",
+      "age": 150
+    }
+    ```
+    
+    Result: **INVALID** - `username` violates `minLength: 3` and `age` violates `maximum: 120`.
+  </Step>
+</Steps>
+
+## Using Reusable Schema Components
+
+The `$defs` keyword lets you define reusable schemas within your document:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "array",
+  "items": { "$ref": "#/$defs/positiveInteger" },
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "exclusiveMinimum": 0
+    }
+  }
+}
+```
+
+This schema describes an array of positive integers. The positive integer constraint is defined once in `$defs` and referenced with `$ref`.
+
+<Note>
+The `$ref` keyword uses JSON Pointer syntax. `#/$defs/positiveInteger` means "in this document, at the path `/$defs/positiveInteger`".
+</Note>
+
+### Example with User Roles
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "title": "User with Role",
+  "type": "object",
+  "properties": {
+    "username": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "role": { "$ref": "#/$defs/role" }
+  },
+  "required": ["username", "email", "role"],
+  "$defs": {
+    "role": {
+      "type": "string",
+      "enum": ["admin", "user", "guest"],
+      "description": "The user's role in the system"
+    }
+  }
+}
+```
+
+Valid instance:
+```json
+{
+  "username": "alice",
+  "email": "alice@example.com",
+  "role": "admin"
+}
+```
+
+## Advanced Validation: Schema Composition
+
+JSON Schema provides keywords for combining schemas:
+
+### allOf - Must Match All
+
+```json
+{
+  "allOf": [
+    { "type": "object", "properties": { "name": { "type": "string" } } },
+    { "type": "object", "properties": { "age": { "type": "integer" } } }
+  ]
+}
+```
+
+An instance must validate against ALL schemas in the array.
+
+### anyOf - Must Match At Least One
+
+```json
+{
+  "anyOf": [
+    { "type": "string", "maxLength": 5 },
+    { "type": "number", "minimum": 0 }
+  ]
+}
+```
+
+Valid instances: `"hello"`, `42`, `"hi"`
+
+### oneOf - Must Match Exactly One
+
+```json
+{
+  "oneOf": [
+    { "type": "string" },
+    { "type": "number" }
+  ]
+}
+```
+
+An instance must validate against EXACTLY ONE schema (not both, not neither).
+
+## Validating Arrays
+
+Arrays have special validation keywords:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "string",
+    "pattern": "^[A-Z]"
+  },
+  "minItems": 1,
+  "maxItems": 10,
+  "uniqueItems": true
+}
+```
+
+This validates arrays where:
+- Each item is a string starting with an uppercase letter
+- There's at least 1 item and at most 10 items
+- All items are unique
+
+Valid: `["Apple", "Banana", "Cherry"]`
+
+Invalid: `["apple", "Banana"]` (first item doesn't start with uppercase)
+
+Invalid: `["Apple", "Apple"]` (items not unique)
+
+## Common Keywords Reference
+
+### Type Validation
+
+| Keyword | Description | Example |
+|---------|-------------|----------|
+| `type` | Specifies the instance type | `{"type": "string"}` |
+| `enum` | Instance must equal one of these values | `{"enum": ["red", "green", "blue"]}` |
+| `const` | Instance must equal this exact value | `{"const": "active"}` |
+
+### Numeric Constraints
+
+| Keyword | Description | Example |
+|---------|-------------|----------|
+| `minimum` | Minimum value (inclusive) | `{"minimum": 0}` |
+| `maximum` | Maximum value (inclusive) | `{"maximum": 100}` |
+| `exclusiveMinimum` | Minimum value (exclusive) | `{"exclusiveMinimum": 0}` |
+| `exclusiveMaximum` | Maximum value (exclusive) | `{"exclusiveMaximum": 100}` |
+| `multipleOf` | Must be a multiple of this value | `{"multipleOf": 5}` |
+
+### String Constraints
+
+| Keyword | Description | Example |
+|---------|-------------|----------|
+| `minLength` | Minimum string length | `{"minLength": 3}` |
+| `maxLength` | Maximum string length | `{"maxLength": 100}` |
+| `pattern` | Must match this regex | `{"pattern": "^[A-Z]"}` |
+| `format` | Semantic format (email, uri, etc.) | `{"format": "email"}` |
+
+### Array Constraints
+
+| Keyword | Description | Example |
+|---------|-------------|----------|
+| `items` | Schema for array items | `{"items": {"type": "number"}}` |
+| `minItems` | Minimum array length | `{"minItems": 1}` |
+| `maxItems` | Maximum array length | `{"maxItems": 10}` |
+| `uniqueItems` | Items must be unique | `{"uniqueItems": true}` |
+
+### Object Constraints
+
+| Keyword | Description | Example |
+|---------|-------------|----------|
+| `properties` | Define object properties | `{"properties": {"name": {"type": "string"}}}` |
+| `required` | Required property names | `{"required": ["name", "email"]}` |
+| `minProperties` | Minimum number of properties | `{"minProperties": 1}` |
+| `maxProperties` | Maximum number of properties | `{"maxProperties": 5}` |
+
+## Best Practices
+
+<Warning>
+**Always specify `$schema`** - This ensures validators know which specification version to use.
+</Warning>
+
+<Note>
+**Use `$id` for reusable schemas** - Assign a canonical IRI to schemas you plan to reference from other schemas.
+</Note>
+
+### 1. Start Simple
+
+Begin with basic type and required field validation, then add constraints as needed:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "required": ["name"]
+}
+```
+
+### 2. Add Descriptive Metadata
+
+Use `title` and `description` to document your schema:
+
+```json
+{
+  "title": "Product",
+  "description": "A product in the catalog",
+  "type": "object"
+}
+```
+
+### 3. Use `$defs` for Reusable Components
+
+Define common patterns once and reference them:
+
+```json
+{
+  "$defs": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "properties": {
+    "createdAt": { "$ref": "#/$defs/timestamp" },
+    "updatedAt": { "$ref": "#/$defs/timestamp" }
+  }
+}
+```
+
+### 4. Validate Your Schemas
+
+Test schemas against valid and invalid instances to ensure they work as expected. Use online validators or implement validation in your application.
+
+### 5. Consider Backward Compatibility
+
+When evolving schemas:
+- Avoid making optional fields required
+- Don't remove fields that existing data uses
+- Add new optional fields instead
+
+## Next Steps
+
+You now have the foundation to create and use JSON Schemas! Here's what to explore next:
+
+<CardGroup cols={2}>
+  <Card title="Schema Composition" icon="diagram-project">
+    Learn about `allOf`, `anyOf`, `oneOf`, and `not` for complex validation logic.
+  </Card>
+  
+  <Card title="Schema References" icon="link">
+    Master `$ref`, `$id`, and `$anchor` for modular, reusable schemas.
+  </Card>
+  
+  <Card title="Format Validation" icon="check-circle">
+    Explore semantic validation with `format` (email, uri, date-time, uuid, etc.).
+  </Card>
+  
+  <Card title="Conditional Schemas" icon="code-branch">
+    Use `if`, `then`, and `else` for conditional validation logic.
+  </Card>
+</CardGroup>

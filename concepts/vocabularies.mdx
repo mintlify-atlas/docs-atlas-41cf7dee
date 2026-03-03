@@ -1,0 +1,324 @@
+---
+title: Vocabularies
+description: Understanding JSON Schema vocabularies for extensibility and interoperability
+---
+
+Vocabularies provide a standardized way to define and use custom keywords in JSON Schema, enabling implementation-agnostic extensibility.
+
+<Warning>
+The vocabularies feature is currently in proposal status and has been extracted from the stable specification for further refinement.
+</Warning>
+
+## Overview
+
+A **vocabulary** is a set of keywords identified by an absolute URI. Vocabularies solve the problem of implementing custom keywords in an interoperable way across different JSON Schema implementations.
+
+### The Problem
+
+The specification allows implementations to support custom keywords, but this approach has drawbacks:
+
+1. Support for extension keywords is optional, not required
+2. No standard mechanism exists for providing this support
+3. Each implementation that offers custom keyword support does so differently
+4. Users defining custom keywords face limited or impossible interoperability
+
+### The Solution
+
+Vocabularies introduce:
+- A standard way to define sets of keywords
+- A mechanism for implementations to declare support
+- Schema-level vocabulary requirements
+- Interoperable extension capabilities
+
+## The $vocabulary Keyword
+
+The `$vocabulary` keyword is used in **meta-schemas** to declare which vocabularies a schema dialect uses.
+
+### Structure
+
+The value is an object where:
+- **Keys** are vocabulary URIs (absolute URIs)
+- **Values** are booleans indicating whether the vocabulary is required
+
+```json
+{
+  "$schema": "https://example.org/draft/next/schema",
+  "$id": "https://example.org/schema",
+  "$vocabulary": {
+    "https://example.org/vocab/vocab1": true,
+    "https://example.org/vocab/vocab2": true,
+    "https://example.org/vocab/vocab3": false
+  }
+}
+```
+
+### Required vs Optional Vocabularies
+
+**Required vocabularies** (`true` value):
+- Implementation must recognize the vocabulary
+- Implementation must be able to process all keywords defined in it
+- If not supported, implementation must refuse to process the schema
+
+**Optional vocabularies** (`false` value):
+- Implementation is not required to recognize the vocabulary
+- May continue processing the schema anyway
+- Unrecognized keywords must be handled as "unknown"
+
+<Info>
+Required vocabularies ensure critical functionality is available, while optional vocabularies allow graceful degradation.
+</Info>
+
+## Vocabularies and Dialects
+
+A **dialect** is the set of vocabularies listed by a meta-schema. It is ephemeral and carries no identifier of its own.
+
+<Note>
+Two meta-schemas with different `$id` values can share a common dialect if they declare the same set of vocabularies.
+</Note>
+
+When a schema declares a meta-schema via `$schema` that contains `$vocabulary`, it declares that:
+- Only keywords defined by the included vocabularies should be processed
+- All other keywords are considered "unknown"
+- The implementation must handle unknown keywords appropriately
+
+## Vocabulary Components
+
+### Vocabulary Description Document
+
+A vocabulary is typically defined in a human-readable document that describes:
+- The keywords included in the vocabulary
+- The behavior of each keyword
+- How keywords interact with each other
+- Examples of usage
+
+The vocabulary URI may or may not be the URL where this document is located.
+
+### Vocabulary Schema
+
+A **vocabulary schema** provides syntactic validation for the vocabulary's keywords. It:
+- Should carry an `$id` value distinct from the vocabulary URI
+- Validates keyword values when a schema is validated against its meta-schema
+- Is not itself a meta-schema (doesn't validate entire schemas)
+
+**Example:**
+```json
+{
+  "$schema": "https://example.org/draft/next/schema",
+  "$id": "https://example.org/schema",
+  "$vocabulary": {
+    "https://example.org/vocab/vocab1": true,
+    "https://example.org/vocab/vocab2": true,
+    "https://example.org/vocab/vocab3": false
+  },
+  "allOf": [
+    {"$ref": "meta/vocab1"},
+    {"$ref": "meta/vocab2"},
+    {"$ref": "meta/vocab3"}
+  ]
+}
+```
+
+The meta-schema references vocabulary schemas to enable validation of keyword syntax.
+
+## Official JSON Schema Vocabularies
+
+The Core and Validation specifications divide keywords into multiple vocabularies:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://json-schema.org/draft/next/schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://json-schema.org/draft/next/vocab/unevaluated": true,
+    "https://json-schema.org/draft/next/vocab/validation": true,
+    "https://json-schema.org/draft/next/vocab/meta-data": true,
+    "https://json-schema.org/draft/next/vocab/format-annotation": true,
+    "https://json-schema.org/draft/next/vocab/content": true
+  },
+  "$dynamicAnchor": "meta",
+  "title": "Core and Validation specifications meta-schema",
+  "allOf": [
+    {"$ref": "meta/core"},
+    {"$ref": "meta/applicator"},
+    {"$ref": "meta/unevaluated"},
+    {"$ref": "meta/validation"},
+    {"$ref": "meta/meta-data"},
+    {"$ref": "meta/format-annotation"},
+    {"$ref": "meta/content"}
+  ]
+}
+```
+
+### Core Vocabulary
+
+The Core vocabulary contains keywords that start with `$` and are essential for processing any schema:
+- `$schema`
+- `$id`
+- `$ref`
+- `$defs`
+- `$comment`
+- And others...
+
+<Warning>
+The Core vocabulary is implicitly included and mandatory. While it's generally advised to include it explicitly in `$vocabulary`, excluding it has no effect.
+</Warning>
+
+### Other Standard Vocabularies
+
+**Applicator vocabulary:**
+- `allOf`, `anyOf`, `oneOf`, `not`
+- `if`, `then`, `else`
+- `properties`, `patternProperties`, `additionalProperties`
+- `items`, `prefixItems`, `contains`
+
+**Unevaluated vocabulary:**
+- `unevaluatedItems`
+- `unevaluatedProperties`
+
+**Validation vocabulary:**
+- `type`, `enum`, `const`
+- `minimum`, `maximum`
+- `minLength`, `maxLength`
+- `pattern`
+- And others...
+
+**Meta-data vocabulary:**
+- `title`, `description`
+- `default`
+- `examples`
+- `deprecated`, `readOnly`, `writeOnly`
+
+## Creating Custom Vocabularies
+
+### Define the Vocabulary URI
+
+Choose an absolute URI to identify your vocabulary:
+
+```
+https://example.com/vocab/custom-validation
+```
+
+### Write the Vocabulary Description
+
+Create a human-readable document describing:
+- Purpose of the vocabulary
+- List of keywords
+- Behavior of each keyword
+- Examples
+
+### Create a Vocabulary Schema (Optional)
+
+Provide syntactic validation for keyword values:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://example.com/meta/custom-validation",
+  "properties": {
+    "minDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "maxDate": {
+      "type": "string",
+      "format": "date"
+    }
+  }
+}
+```
+
+### Create or Extend a Meta-Schema
+
+Declare your vocabulary in a meta-schema:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/next/schema",
+  "$id": "https://example.com/my-meta-schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/next/vocab/core": true,
+    "https://json-schema.org/draft/next/vocab/applicator": true,
+    "https://json-schema.org/draft/next/vocab/validation": true,
+    "https://example.com/vocab/custom-validation": true
+  },
+  "allOf": [
+    {"$ref": "https://json-schema.org/draft/next/meta/core"},
+    {"$ref": "https://json-schema.org/draft/next/meta/applicator"},
+    {"$ref": "https://json-schema.org/draft/next/meta/validation"},
+    {"$ref": "https://example.com/meta/custom-validation"}
+  ]
+}
+```
+
+### Implement the Keywords
+
+Provide implementation code for your keywords. This is implementation-specific and requires custom code.
+
+<Note>
+Implementations may provide mechanisms to register keyword handlers, but the exact mechanism is implementation-dependent.
+</Note>
+
+## Current Limitations
+
+### Unknown Keywords and Unsupported Vocabularies
+
+The current specification's handling of unknown keywords from optional vocabularies is under discussion. This presents challenges when:
+- An implementation doesn't support an optional vocabulary
+- The schema contains keywords from that vocabulary
+- The behavior in such cases needs clarification
+
+### Machine Readability
+
+The vocabulary URI is an opaque value. There's no standard machine-readable format for:
+- Listing keywords defined by a vocabulary
+- Providing metadata about keywords
+- Describing keyword behavior programmatically
+
+Several proposals exist for vocabulary definition files, but none are currently standardized.
+
+### Implicit Core Inclusion
+
+The Core vocabulary's implicit and mandatory inclusion can be confusing:
+- It's always included, even if omitted from `$vocabulary`
+- Best practice is to include it explicitly
+- The implicit behavior may be refined in future versions
+
+## Best Practices
+
+### For Vocabulary Authors
+
+1. **Choose clear URIs:** Use URIs that clearly identify the vocabulary purpose
+2. **Provide documentation:** Write comprehensive description documents
+3. **Create vocabulary schemas:** Help users validate their schema syntax
+4. **Consider interoperability:** Design keywords that work well with standard keywords
+5. **Define clear behaviors:** Specify how keywords interact with each other
+
+### For Schema Authors
+
+1. **Declare required vocabularies:** Use `true` for critical functionality
+2. **Use optional carefully:** Only use `false` for truly optional features
+3. **Include Core explicitly:** Follow best practice of explicitly declaring Core vocabulary
+4. **Test across implementations:** Verify vocabulary support in target implementations
+
+### For Implementation Authors
+
+1. **Support vocabulary declaration:** Implement the `$vocabulary` keyword
+2. **Fail on missing required vocabularies:** Don't process schemas when requirements aren't met
+3. **Handle unknown keywords:** Follow specification guidelines for unknown keyword handling
+4. **Provide extension mechanisms:** Allow users to register custom vocabulary handlers
+5. **Document supported vocabularies:** Clearly state which vocabularies are supported
+
+## Future Development
+
+The vocabularies feature is under active development. Areas being explored include:
+
+- Better handling of unknown keywords from optional vocabularies
+- Machine-readable vocabulary definition formats
+- Simplified Core vocabulary inclusion semantics
+- Enhanced interoperability guidelines
+
+<Info>
+For the latest discussions and proposals, see the [vocabulary-labeled issues](https://github.com/json-schema-org/json-schema-spec/issues?q=is%3Aopen+is%3Aissue+label%3Avocabulary) in the JSON Schema specification repository.
+</Info>

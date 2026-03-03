@@ -1,0 +1,198 @@
+---
+title: Tools and Utilities
+description: Development tools, validators, generators, and utilities for working with JSON Schema
+---
+
+## Overview
+
+The JSON Schema ecosystem includes a rich collection of tools and utilities that help developers work more effectively with schemas, from validation and generation to documentation and testing.
+
+## Tool Categories
+
+JSON Schema tools span multiple categories to support different workflows:
+
+<CardGroup cols={2}>
+  <Card title="Online Validators" icon="browser">
+    Web-based tools for testing and validating schemas without installation
+  </Card>
+  <Card title="CLI Tools" icon="terminal">
+    Command-line utilities for automation and CI/CD integration
+  </Card>
+  <Card title="Schema Generators" icon="wand-magic-sparkles">
+    Tools that create schemas from JSON, code, or databases
+  </Card>
+  <Card title="Documentation Generators" icon="book">
+    Systems that produce human-readable docs from schemas
+  </Card>
+  <Card title="Code Generators" icon="code">
+    Generate type definitions and validation code from schemas
+  </Card>
+  <Card title="IDE Extensions" icon="puzzle-piece">
+    Editor plugins for schema authoring and validation
+  </Card>
+</CardGroup>
+
+## Development Tools
+
+### Schema Authoring
+
+Tools for creating and editing JSON Schemas:
+
+- **VS Code Extensions**: IntelliSense, validation, and formatting
+- **JSON Schema Linters**: Ensure schemas follow best practices
+- **Schema Builders**: Visual or programmatic schema construction
+- **Format Validators**: Test format attribute implementations
+
+### Testing and Validation
+
+<Card title="JSON Schema Test Suite" icon="flask" href="/resources/test-suite">
+  Official conformance tests for implementation validation
+</Card>
+
+Additional testing tools include:
+
+- **Online validators**: Quick schema testing in the browser
+- **CLI validators**: Batch validation for multiple files
+- **CI/CD integrations**: Automated schema validation in pipelines
+- **Mock data generators**: Create test data from schemas
+
+## Schema Generation
+
+Automate schema creation from various sources:
+
+### From Data
+
+- Generate schemas from example JSON documents
+- Infer types and structures automatically
+- Merge multiple examples into comprehensive schemas
+
+### From Code
+
+- Extract schemas from TypeScript types
+- Generate from Python Pydantic models
+- Convert from other schema formats (OpenAPI, GraphQL)
+
+### From Databases
+
+- Create schemas from database table definitions
+- Map SQL types to JSON Schema types
+- Include constraints and relationships
+
+## Code Generation
+
+Generate code artifacts from JSON Schemas:
+
+<CardGroup cols={2}>
+  <Card title="Type Definitions" icon="brackets-curly">
+    TypeScript interfaces, Python classes, Java POJOs
+  </Card>
+  <Card title="Validation Code" icon="shield-check">
+    Runtime validators in your target language
+  </Card>
+  <Card title="Serialization" icon="arrows-rotate">
+    Serializers and deserializers for JSON data
+  </Card>
+  <Card title="API Clients" icon="plug">
+    HTTP client code for API endpoints
+  </Card>
+</CardGroup>
+
+## Documentation Tools
+
+Create human-readable documentation:
+
+- **Static site generators**: Build documentation websites
+- **Markdown generators**: Convert schemas to markdown reference docs
+- **Interactive explorers**: Browsable schema documentation
+- **API documentation**: Integrate with OpenAPI/Swagger tools
+
+## CI/CD Integration
+
+Incorporate JSON Schema into your development pipeline:
+
+### Schema Validation
+
+```bash
+# Validate schemas in CI
+jsonschema validate --schema meta-schema.json schema.json
+```
+
+### Data Validation
+
+```bash
+# Validate data files against schemas
+jsonschema validate --schema api-schema.json data/*.json
+```
+
+### Breaking Change Detection
+
+- Compare schema versions
+- Detect breaking changes
+- Enforce backwards compatibility
+- Version control for schemas
+
+## IDE and Editor Support
+
+### Visual Studio Code
+
+- Built-in JSON Schema validation
+- IntelliSense for schema-constrained JSON files
+- Extensions for enhanced schema authoring
+
+### JetBrains IDEs
+
+- JSON Schema validation and completion
+- Schema-aware editing
+- Quick documentation
+
+### Other Editors
+
+- Vim/Neovim plugins
+- Sublime Text packages
+- Atom extensions
+
+## Community Tools
+
+The JSON Schema community has created numerous specialized tools:
+
+- **Schema registries**: Centralized schema storage and versioning
+- **Diff tools**: Compare schemas and detect changes
+- **Migration tools**: Update schemas between draft versions
+- **Performance benchmarks**: Compare implementation speed
+- **Fuzzing tools**: Security testing for validators
+
+## Building Tools
+
+If you're creating tools for JSON Schema:
+
+<Steps>
+  <Step title="Use Standard Implementations">
+    Build on top of [established implementations](/resources/implementations)
+  </Step>
+  <Step title="Follow Specifications">
+    Adhere to the official [JSON Schema specification](http://json-schema.org/specification.html)
+  </Step>
+  <Step title="Provide Good UX">
+    Focus on clear error messages and intuitive interfaces
+  </Step>
+  <Step title="Share With Community">
+    List your tool on the [JSON Schema website](https://json-schema.org)
+  </Step>
+</Steps>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Implementations" icon="code" href="/resources/implementations">
+    Core libraries for JSON Schema validation
+  </Card>
+  <Card title="Specification" icon="book" href="http://json-schema.org/specification.html">
+    Official JSON Schema specification documents
+  </Card>
+  <Card title="Community" icon="users" href="https://json-schema.org/slack">
+    Join the JSON Schema Slack community
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/json-schema-org">
+    JSON Schema organization on GitHub
+  </Card>
+</CardGroup>

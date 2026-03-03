@@ -1,0 +1,126 @@
+---
+title: type
+description: Validate the data type of a JSON value
+---
+
+The `type` keyword validates that an instance matches one or more specified data types.
+
+## Syntax
+
+The value of `type` must be either:
+- A string representing a single type
+- An array of strings representing multiple allowed types
+
+If an array is used, it must be non-empty with unique elements.
+
+## Allowed Types
+
+The following type values are valid:
+
+- `"null"` - JSON null value
+- `"boolean"` - JSON boolean (true or false)
+- `"object"` - JSON object
+- `"array"` - JSON array
+- `"number"` - JSON number (including integers and decimals)
+- `"string"` - JSON string
+- `"integer"` - A number with a zero fractional part
+
+## Validation Rules
+
+**Single type**: An instance validates successfully if its type matches the specified type.
+
+**Multiple types**: An instance validates successfully if its type matches any of the types in the array.
+
+## Examples
+
+### Single Type
+
+```json
+{
+  "type": "string"
+}
+```
+
+Valid instances:
+```json
+"hello"
+"123"
+""
+```
+
+Invalid instances:
+```json
+123
+true
+null
+```
+
+### Integer Type
+
+```json
+{
+  "type": "integer"
+}
+```
+
+Valid instances:
+```json
+42
+0
+-10
+```
+
+Invalid instances:
+```json
+3.14
+"42"
+true
+```
+
+### Multiple Types
+
+```json
+{
+  "type": ["string", "number"]
+}
+```
+
+Valid instances:
+```json
+"hello"
+42
+3.14
+```
+
+Invalid instances:
+```json
+true
+null
+{}
+```
+
+### Nullable String
+
+```json
+{
+  "type": ["string", "null"]
+}
+```
+
+Valid instances:
+```json
+"hello"
+null
+```
+
+Invalid instances:
+```json
+123
+true
+```
+
+## Notes
+
+- The `"integer"` type is not a primitive JSON type but is provided as a convenient way to validate whole numbers
+- When using `"integer"`, the value `3.0` is considered valid because it has a zero fractional part
+- The array form of `type` is useful for creating nullable types or allowing multiple data types

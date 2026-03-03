@@ -1,0 +1,343 @@
+---
+title: properties
+description: Apply schemas to object properties
+---
+
+The `properties` keyword defines schemas that validate specific properties of a JSON object. Each property name maps to a schema that validates the corresponding property value.
+
+## Syntax
+
+```json
+{
+  "properties": {
+    "propertyName1": { /* schema for propertyName1 */ },
+    "propertyName2": { /* schema for propertyName2 */ },
+    "propertyName3": { /* schema for propertyName3 */ }
+  }
+}
+```
+
+The value must be an object where each value is a valid JSON Schema.
+
+## Behavior
+
+Validation succeeds if, for each property name that appears in both the instance and this keyword's value, the instance property value validates against the corresponding schema.
+
+- Only properties present in both the instance and `properties` are validated
+- Additional properties in the instance are ignored by this keyword
+- Missing properties specified in `properties` are allowed (use `required` to mandate them)
+- Produces an annotation containing the set of property names validated
+- Affects behavior of `additionalProperties` and `unevaluatedProperties`
+
+## Examples
+
+### Basic Object Schema
+
+Define expected object properties:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer", "minimum": 0 },
+    "email": { "type": "string", "format": "email" }
+  }
+}
+```
+
+Valid:
+```json
+{ "name": "Alice", "age": 30, "email": "alice@example.com" }
+{ "name": "Bob" }
+{ "name": "Charlie", "age": 25, "city": "NYC" }
+```
+
+Invalid:
+```json
+{ "name": 123 }
+{ "age": -5 }
+{ "email": "not-an-email" }
+```
+
+### Nested Objects
+
+Define schemas for nested object properties:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "user": {
+      "type": "object",
+      "properties": {
+        "username": { "type": "string" },
+        "profile": {
+          "type": "object",
+          "properties": {
+            "bio": { "type": "string" },
+            "avatar": { "type": "string", "format": "uri" }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+Valid:
+```json
+{
+  "user": {
+    "username": "alice",
+    "profile": {
+      "bio": "Software developer",
+      "avatar": "https://example.com/avatar.png"
+    }
+  }
+}
+```
+
+### With Required Properties
+
+Combine with `required` to mandate specific properties:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "string" },
+    "description": { "type": "string" }
+  },
+  "required": ["id", "name"]
+}
+```
+
+Valid:
+```json
+{ "id": 1, "name": "Product" }
+{ "id": 2, "name": "Item", "description": "Optional" }
+```
+
+Invalid:
+```json
+{ "id": 1 }
+{ "name": "Product" }
+```
+
+### Complex Property Schemas
+
+Use advanced schemas for property validation:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "multipleOf": 0.01
+    }
+  }
+}
+```
+
+Valid:
+```json
+{
+  "tags": ["electronics", "gadget"],
+  "metadata": { "brand": "TechCo", "model": "X1" },
+  "price": 99.99
+}
+```
+
+### API Response Schema
+
+Define structure for API responses:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["success", "error"]
+    },
+    "data": {
+      "type": "object"
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": { "type": "integer" },
+        "message": { "type": "string" }
+      },
+      "required": ["code", "message"]
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["status", "timestamp"]
+}
+```
+
+### Configuration Object
+
+Validate application configuration:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "server": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      },
+      "required": ["host", "port"]
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "poolSize": { "type": "integer", "minimum": 1, "default": 10 }
+      },
+      "required": ["url"]
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": { "enum": ["debug", "info", "warn", "error"] },
+        "file": { "type": "string" }
+      }
+    }
+  },
+  "required": ["server", "database"]
+}
+```
+
+### Using References
+
+Reuse property schemas with `$ref`:
+
+```json
+{
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "zipCode": { "type": "string" }
+      },
+      "required": ["street", "city"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "billingAddress": { "$ref": "#/$defs/address" },
+    "shippingAddress": { "$ref": "#/$defs/address" }
+  }
+}
+```
+
+## Interaction with Other Keywords
+
+### With additionalProperties
+
+`properties` determines which properties are considered "known":
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" }
+  },
+  "additionalProperties": false
+}
+```
+
+Valid: `{ "name": "Alice" }`  
+Invalid: `{ "name": "Alice", "age": 30 }` (age is additional)
+
+### With patternProperties
+
+Both can apply to the same property:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "minLength": 1 }
+  },
+  "patternProperties": {
+    "^n": { "maxLength": 50 }
+  }
+}
+```
+
+The `name` property must satisfy both schemas.
+
+### With unevaluatedProperties
+
+Properties validated by `properties` are marked as evaluated:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" }
+  },
+  "unevaluatedProperties": false
+}
+```
+
+Valid: `{ "id": 1 }`  
+Invalid: `{ "id": 1, "name": "test" }`
+
+## Annotations
+
+The `properties` keyword produces an annotation containing the set of instance property names that were validated. This annotation is used by:
+
+- `additionalProperties` to determine which properties are "additional"
+- `unevaluatedProperties` to determine which properties are "unevaluated"
+
+## Common Use Cases
+
+- **Object validation**: Define structure and constraints for JSON objects
+- **API schemas**: Validate request/response payloads
+- **Configuration files**: Ensure config objects have correct structure
+- **Data models**: Define entity schemas for data validation
+- **Form validation**: Validate user input objects
+
+## Notes
+
+- Omitting `properties` is equivalent to an empty object (no validation)
+- Properties not listed in `properties` are not validated by this keyword
+- Use `required` separately to mandate property presence
+- Combines naturally with `additionalProperties` to control object shape
+- The annotation is essential for the proper functioning of `additionalProperties` and `unevaluatedProperties`
+
+## Best Practices
+
+- Always specify `type: "object"` when using `properties`
+- Use `required` to explicitly list mandatory properties
+- Combine with `additionalProperties: false` for strict object shapes
+- Use `$ref` to reuse common property schemas
+- Provide clear descriptions for each property to aid documentation

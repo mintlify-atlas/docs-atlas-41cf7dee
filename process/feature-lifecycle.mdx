@@ -1,0 +1,140 @@
+---
+title: Feature Lifecycle Stages
+description: The stages that features progress through in JSON Schema specification development
+---
+
+## Overview
+
+New features progress through a sequence of stages before being added to the specification, and existing stable features must be formally deprecated before being removed.
+
+## Lifecycle Stages
+
+The stages of the feature life cycle, in order, are:
+
+1. Concept
+2. Proposal
+3. Experimentation
+4. Stable
+5. Deprecated
+6. Removed
+
+## Stage Details
+
+### Concept
+
+The feature life cycle begins with an idea expressed in a GitHub issue in the repository. Initial discussion may occur in Slack or another space, but the life cycle does not formally begin until a GitHub issue is created.
+
+The discussion should cover:
+- How the feature could work
+- Use cases
+- Syntax
+- Alternatives
+- Whether it's a breaking change
+
+The goal is to decide rough requirements.
+
+#### Core Team Prototyping
+
+During this stage, members of the Core Team implement private prototypes of the ideas expressed in the issue to get a feel for how it integrates with stable features. Questions to address may include:
+
+- Does the idea operate within the confines of existing JSON Schema evaluation processes, or does it define something new?
+- Is the idea merely a shortcut for some existing functionality (syntactic sugar), or does it solve a previously unsolvable problem?
+- What is the expected complexity for implementing the feature?
+
+<Warning>
+At least two (2) Core Team members must have implemented prototypes before the concept can continue to the formal proposal process.
+</Warning>
+
+### Proposal
+
+Once a rough consensus for the idea has been reached, a formal proposal is written, separate from the specification, with the goal of precisely defining specification changes.
+
+The proposal uses the Proposal Template and is stored in the repository's `proposals` folder.
+
+Additionally, a draft ADR (Architecture Decision Record) is included using the file name of the proposal document with an `-adr` suffix: `{proposal-file-name}-adr.md`. This ADR includes additional information from the "Concept" discussion.
+
+#### Meta-schema Updates
+
+Proposed keywords are added to the appropriate vocabulary meta-schemas in:
+- Latest published release
+- The `main` branch of the repository
+
+The subschema for the proposed keyword contains only a `$comment` keyword indicating that the feature is experimental and containing a link to the proposal document. Aside from the `$comment` keyword, the subschema is empty.
+
+<Note>
+This is done so that a proposed keyword is allowed but not validated as its syntax may change during the proposal/experimentation process. It also permits different implementations to support different variations of each proposal separately throughout this process. It will be up to the implementation to validate these keywords in accordance with their support.
+</Note>
+
+#### Testing
+
+Tests for the proposal are added to the JSON Schema Test Suite.
+
+Once an initial draft of the proposal has been completed and published, the feature moves into Experimentation.
+
+### Experimentation
+
+Implementations may begin to support the new feature.
+
+Feedback from implementers and users are expected to result in refinements to the proposal, which are then updated in the implementations.
+
+<Warning>
+Breaking changes to a proposed feature MAY occur, but are highly discouraged.
+</Warning>
+
+#### Advancement Criteria
+
+In order to proceed to the Stable stage:
+- At least five (5) implementations support the feature
+- There is sufficient evidence of use
+- No changes are requested for a period of six (6) weeks
+
+<Note>
+Experimental features are not considered to be interoperable across implementations.
+</Note>
+
+#### Proposal Removal
+
+If a proposal cannot advance to the next stage, it may be removed:
+- The proposal document is moved to an `archive` subfolder
+- The keyword is removed from the meta-schemas
+- Any tests are moved to an `archive` subfolder
+
+The removal of a feature which has not reached the stable state is not considered a breaking change.
+
+### Stable
+
+The feature is incorporated into the specification in the `main` branch as specified by the proposal document, and the feature will be required as of the next release.
+
+<Steps>
+  <Step title="Complete ADR">
+    The draft ADR is completed, dated, and moved to the `adr` folder.
+  </Step>
+  
+  <Step title="Update Meta-schema">
+    The appropriate vocabulary meta-schema in the `main` branch is updated to include a subschema that validates the feature's syntax requirements. This will be made available with the next release.
+  </Step>
+  
+  <Step title="Remove from Previous Release">
+    Upon publication of the new release, the meta-schema for the lapsed release will have the keyword removed.
+  </Step>
+  
+  <Step title="Incorporate Tests">
+    The appropriate tests are incorporated into the main suite.
+  </Step>
+</Steps>
+
+### Deprecated
+
+If a feature is no longer useful (e.g., it has been replaced), it may be deprecated by indicating it as such in the specification.
+
+<Warning>
+Implementations must support deprecated features.
+</Warning>
+
+### Removed
+
+A feature must have been published as deprecated for at least one release before it can be considered for removal.
+
+<Warning>
+Feature removal is considered a breaking change.
+</Warning>

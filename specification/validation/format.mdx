@@ -1,0 +1,494 @@
+---
+title: "Format Validation"
+description: "Semantic validation using the format keyword for dates, times, email addresses, hostnames, IP addresses, URIs, and more"
+---
+
+## Overview
+
+The `format` keyword is used to convey semantic information for values that are accurately described by authoritative resources such as RFCs or external specifications. While structural validation ensures correct data types and structures, format validation provides semantic validation for specific data formats.
+
+<Info>
+The `format` keyword functions as both an **assertion** (validation) and an **annotation** (metadata). Implementations SHOULD provide assertion behavior for format values defined in this specification.
+</Info>
+
+## Usage
+
+**Value**: String
+
+The value of this keyword MUST be a string. While this keyword can validate any type, each distinct format value generally only validates a specific set of instance types.
+
+```json
+{
+  "type": "string",
+  "format": "email"
+}
+```
+
+<Warning>
+If the type of the instance to validate is not in the expected set for a format, validation for this keyword SHOULD succeed (not fail).
+</Warning>
+
+## Implementation Requirements
+
+Implementations:
+
+- SHOULD provide validation for each format attribute defined in this document
+- Are encouraged to provide validation for formats listed in the Format Registry
+- MAY support custom format values, but such support MUST be configurable and disabled by default
+- SHOULD use a common parsing library or well-known regular expression for each format
+- SHOULD clearly document any limitations regarding format validation
+- MUST refuse to process any schema containing a format value they don't support
+
+<Note>
+Validation is limited to **syntactic checking**. Implementations SHOULD NOT attempt to send an email, connect to a URL, or otherwise check the existence of an entity identified by a format instance.
+</Note>
+
+## Dates and Times
+
+These format values apply to string instances and are based on RFC 9557 and RFC 3339.
+
+### `date-time`
+
+A date-time representation including timezone.
+
+**Standard**: RFC 9557 "date-time-ext" rule
+
+```json
+{
+  "type": "string",
+  "format": "date-time"
+}
+```
+
+<Accordion title="Valid Examples">
+- `2026-03-03T15:30:00Z`
+- `2026-03-03T15:30:00+05:30`
+- `2026-03-03T15:30:00.123Z`
+- `2026-03-03T15:30:00-08:00`
+</Accordion>
+
+<Info>
+This format SHOULD allow and validate published leap seconds per RFC 3339, section 5.7.
+</Info>
+
+### `date`
+
+A full date without time or timezone.
+
+**Standard**: RFC 3339 "full-date" rule
+
+```json
+{
+  "type": "string",
+  "format": "date"
+}
+```
+
+**Valid Example**: `2026-03-03`
+
+### `time`
+
+A time of day with timezone, independent of any specific date.
+
+**Standard**: RFC 3339 "full-time" rule
+
+```json
+{
+  "type": "string",
+  "format": "time"
+}
+```
+
+<Accordion title="Valid Examples">
+- `15:30:00Z`
+- `15:30:00+05:30`
+- `15:30:00.123Z`
+</Accordion>
+
+<Warning>
+The `time` format MUST NOT include leap seconds. Leap seconds only apply to specific dates, and `time` represents a time value independent of any date.
+</Warning>
+
+### `duration`
+
+A duration of time.
+
+**Standard**: RFC 3339 Appendix A "duration" rule (from ISO 8601)
+
+```json
+{
+  "type": "string",
+  "format": "duration"
+}
+```
+
+<Accordion title="Valid Examples">
+- `P1Y` - 1 year
+- `P3M` - 3 months
+- `P1DT12H` - 1 day and 12 hours
+- `PT30M` - 30 minutes
+- `P1Y2M3DT4H5M6S` - 1 year, 2 months, 3 days, 4 hours, 5 minutes, 6 seconds
+</Accordion>
+
+## Email Addresses
+
+### `email`
+
+A valid Internet email address.
+
+**Standard**: RFC 5321, section 4.1.2 "Mailbox" rule
+
+```json
+{
+  "type": "string",
+  "format": "email"
+}
+```
+
+<Accordion title="Valid Examples">
+- `user@example.com`
+- `john.doe@company.co.uk`
+- `admin+tag@domain.org`
+</Accordion>
+
+## Hostnames
+
+### `hostname`
+
+A valid Internet hostname.
+
+**Standard**: RFC 1123, section 2.1
+
+```json
+{
+  "type": "string",
+  "format": "hostname"
+}
+```
+
+<Accordion title="Valid Examples">
+- `example.com`
+- `api.company.co.uk`
+- `my-server-01.internal`
+</Accordion>
+
+## IP Addresses
+
+### `ipv4`
+
+An IPv4 address in dotted-quad notation.
+
+**Standard**: RFC 2673, section 3.2 "dotted-quad" syntax
+
+```json
+{
+  "type": "string",
+  "format": "ipv4"
+}
+```
+
+<Accordion title="Valid Examples">
+- `192.168.1.1`
+- `10.0.0.1`
+- `172.16.0.1`
+- `8.8.8.8`
+</Accordion>
+
+### `ipv6`
+
+An IPv6 address.
+
+**Standard**: RFC 4291, section 2.2
+
+```json
+{
+  "type": "string",
+  "format": "ipv6"
+}
+```
+
+<Accordion title="Valid Examples">
+- `2001:0db8:85a3:0000:0000:8a2e:0370:7334`
+- `2001:db8:85a3::8a2e:370:7334` (compressed)
+- `::1` (loopback)
+- `fe80::1` (link-local)
+</Accordion>
+
+## Resource Identifiers
+
+### `uri`
+
+A valid Internationalized Resource Identifier (IRI).
+
+**Standard**: RFC 3987
+
+```json
+{
+  "type": "string",
+  "format": "uri"
+}
+```
+
+<Accordion title="Valid Examples">
+- `https://example.com/path`
+- `ftp://files.example.org/file.txt`
+- `mailto:user@example.com`
+</Accordion>
+
+<Note>
+All valid URIs are also valid IRIs.
+</Note>
+
+### `uri-reference`
+
+A URI reference (either a URI or a relative reference).
+
+**Standard**: RFC 3986
+
+```json
+{
+  "type": "string",
+  "format": "uri-reference"
+}
+```
+
+<Accordion title="Valid Examples">
+- `https://example.com/path` (absolute URI)
+- `/path/to/resource` (relative reference)
+- `../other/resource` (relative reference)
+- `#section` (fragment-only reference)
+</Accordion>
+
+### `iri`
+
+A valid IRI (Internationalized Resource Identifier).
+
+**Standard**: RFC 3987
+
+```json
+{
+  "type": "string",
+  "format": "iri"
+}
+```
+
+### `iri-reference`
+
+An IRI reference (either an IRI or a relative reference).
+
+**Standard**: RFC 3987
+
+```json
+{
+  "type": "string",
+  "format": "iri-reference"
+}
+```
+
+### `uuid`
+
+A Universally Unique Identifier.
+
+**Standard**: RFC 4122
+
+```json
+{
+  "type": "string",
+  "format": "uuid"
+}
+```
+
+**Valid Example**: `f81d4fae-7dec-11d0-a765-00a0c91e6bf6`
+
+<Warning>
+The `uuid` format is for **plain UUIDs**, not UUIDs in URNs. For UUIDs as URNs (e.g., `urn:uuid:...`), use the `uri` format with a `pattern` regular expression of `^urn:uuid:`.
+</Warning>
+
+### `uri-template`
+
+A URI Template of any level.
+
+**Standard**: RFC 6570
+
+```json
+{
+  "type": "string",
+  "format": "uri-template"
+}
+```
+
+<Accordion title="Valid Examples">
+- `https://api.example.com/users/{id}`
+- `https://example.com/search{?q,page}`
+- `https://api.example.com/{version}/items{/id}`
+</Accordion>
+
+<Info>
+URI Templates may be used for IRIs; there is no separate IRI Template specification.
+</Info>
+
+## JSON Pointers
+
+### `json-pointer`
+
+A JSON Pointer string.
+
+**Standard**: RFC 6901, section 5
+
+```json
+{
+  "type": "string",
+  "format": "json-pointer"
+}
+```
+
+<Accordion title="Valid Examples">
+- `/foo/bar`
+- `/items/0`
+- `/properties/name`
+- `` (empty string - references the whole document)
+</Accordion>
+
+### `relative-json-pointer`
+
+A Relative JSON Pointer.
+
+**Standard**: draft-handrews-relative-json-pointer-01
+
+```json
+{
+  "type": "string",
+  "format": "relative-json-pointer"
+}
+```
+
+<Accordion title="Valid Examples">
+- `0`
+- `1/name`
+- `0#`
+</Accordion>
+
+<Tip>
+To allow for both absolute and relative JSON Pointers, use `anyOf` or `oneOf`:
+
+```json
+{
+  "anyOf": [
+    { "format": "json-pointer" },
+    { "format": "relative-json-pointer" }
+  ]
+}
+```
+</Tip>
+
+## Regular Expressions
+
+### `regex`
+
+A valid regular expression.
+
+**Standard**: ECMA-262
+
+```json
+{
+  "type": "string",
+  "format": "regex"
+}
+```
+
+<Accordion title="Valid Examples">
+- `^[a-z]+$`
+- `\\d{3}-\\d{3}-\\d{4}`
+- `[A-Z][a-z]*`
+</Accordion>
+
+<Info>
+Implementations that validate formats MUST accept at least the subset of ECMA-262 defined in the JSON Schema Core specification, and SHOULD accept all valid ECMA-262 expressions.
+</Info>
+
+## Format Registry
+
+JSON Schema maintains a registry of formats defined by other specifications and organizations. As of the publication of this specification, the format registry can be found at:
+
+<Card>
+https://github.com/json-schema-org/json-schema-spec/blob/main/specs/registries/format.json
+</Card>
+
+Implementations SHOULD support the formats listed in this registry as if they were defined by this document.
+
+## Custom Formats
+
+Implementations MAY support custom format values, but:
+
+- Such support MUST be configurable
+- Custom formats MUST be disabled by default
+- Save for agreement between parties, schema authors SHALL NOT expect a peer implementation to support custom format values
+
+```json Example with Custom Format
+{
+  "type": "string",
+  "format": "custom-sku",
+  "description": "Custom format - requires specific implementation support"
+}
+```
+
+## Complete Examples
+
+<CodeGroup>
+```json User Profile Schema
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "website": {
+      "type": "string",
+      "format": "uri"
+    },
+    "dateOfBirth": {
+      "type": "string",
+      "format": "date"
+    },
+    "registeredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ipAddress": {
+      "type": "string",
+      "format": "ipv4"
+    }
+  }
+}
+```
+
+```json API Endpoint Schema
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "endpoint": {
+      "type": "string",
+      "format": "uri-template"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "hostname": {
+      "type": "string",
+      "format": "hostname"
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Related Topics
+
+- [Structural Validation](/specification/validation/structural-validation) - Type and structural constraints
+- [Content Validation](/specification/validation/content) - String-encoded data

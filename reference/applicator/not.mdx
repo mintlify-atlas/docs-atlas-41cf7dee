@@ -1,0 +1,245 @@
+---
+title: not
+description: Validate by negating a schema
+---
+
+The `not` keyword validates an instance by inverting the validation result of its subschema. An instance is valid if it fails to validate against the specified schema.
+
+## Syntax
+
+```json
+{
+  "not": { /* schema */ }
+}
+```
+
+The value must be a valid JSON Schema.
+
+## Behavior
+
+An instance is valid against `not` if and only if it **fails** to validate successfully against the schema defined by this keyword.
+
+- The subschema is evaluated normally
+- The validation result is inverted (negated)
+- If the subschema passes, `not` fails
+- If the subschema fails, `not` passes
+- No annotations are produced by `not`
+
+## Examples
+
+### Exclude Specific Values
+
+Reject a particular value:
+
+```json
+{
+  "type": "string",
+  "not": {
+    "const": "forbidden"
+  }
+}
+```
+
+Valid: `"hello"`, `"world"`, `"anything else"`  
+Invalid: `"forbidden"`
+
+### Exclude Specific Types
+
+Reject instances of a certain type:
+
+```json
+{
+  "not": {
+    "type": "null"
+  }
+}
+```
+
+Valid: `"hello"`, `42`, `true`, `[]`, `{}`  
+Invalid: `null`
+
+### Exclude Pattern Matches
+
+Reject strings matching a pattern:
+
+```json
+{
+  "type": "string",
+  "not": {
+    "pattern": "^test"
+  }
+}
+```
+
+Valid: `"production"`, `"development"`  
+Invalid: `"test"`, `"testing"`, `"test-env"`
+
+### Exclude Properties
+
+Reject objects with specific properties:
+
+```json
+{
+  "type": "object",
+  "not": {
+    "required": ["deprecated"]
+  }
+}
+```
+
+Valid:
+```json
+{ "name": "active" }
+{ "id": 123 }
+{}
+```
+
+Invalid:
+```json
+{ "deprecated": true, "name": "old" }
+```
+
+### Exclude Number Ranges
+
+Reject numbers in a specific range:
+
+```json
+{
+  "type": "number",
+  "not": {
+    "minimum": 10,
+    "maximum": 20
+  }
+}
+```
+
+Valid: `5`, `9`, `21`, `100`  
+Invalid: `10`, `15`, `20`
+
+### Reject Empty Strings
+
+Require non-empty strings:
+
+```json
+{
+  "type": "string",
+  "not": {
+    "maxLength": 0
+  }
+}
+```
+
+Valid: `"hello"`, `"x"`  
+Invalid: `""`
+
+### Exclude Array Sizes
+
+Reject arrays with specific lengths:
+
+```json
+{
+  "type": "array",
+  "not": {
+    "minItems": 0,
+    "maxItems": 0
+  }
+}
+```
+
+Valid: `[1]`, `[1, 2, 3]`  
+Invalid: `[]`
+
+### Complex Exclusions
+
+Reject objects matching a complex pattern:
+
+```json
+{
+  "type": "object",
+  "not": {
+    "allOf": [
+      {
+        "properties": {
+          "status": { "const": "active" }
+        },
+        "required": ["status"]
+      },
+      {
+        "properties": {
+          "deleted": { "const": true }
+        },
+        "required": ["deleted"]
+      }
+    ]
+  }
+}
+```
+
+This rejects objects that are both active and deleted (an invalid state).
+
+Valid:
+```json
+{ "status": "active" }
+{ "deleted": true }
+{ "status": "inactive", "deleted": true }
+```
+
+Invalid:
+```json
+{ "status": "active", "deleted": true }
+```
+
+### Enforce Constraints
+
+Combine with other keywords to enforce rules:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "age": { "type": "integer" },
+    "minor": { "type": "boolean" }
+  },
+  "if": {
+    "properties": {
+      "age": { "minimum": 18 }
+    },
+    "required": ["age"]
+  },
+  "then": {
+    "not": {
+      "properties": {
+        "minor": { "const": true }
+      },
+      "required": ["minor"]
+    }
+  }
+}
+```
+
+This ensures that if age ≥ 18, minor cannot be true.
+
+## Common Use Cases
+
+- **Value exclusion**: Reject specific disallowed values
+- **Type restriction**: Exclude certain types
+- **Pattern rejection**: Reject strings matching unwanted patterns
+- **Property prohibition**: Disallow specific object properties
+- **Range exclusion**: Reject values in forbidden ranges
+- **State validation**: Prevent invalid state combinations
+
+## Notes
+
+- `not` is purely an assertion keyword; it never produces annotations
+- Boolean schema `false` is equivalent to `{ "not": {} }` (always fails)
+- Boolean schema `true` is equivalent to `{ "not": false }` (always passes)
+- Use with caution: negation can make schemas harder to understand
+- Validation error messages for `not` may be less intuitive
+- Double negation (`not` containing `not`) is valid but should be avoided for clarity
+
+## Best Practices
+
+- Provide clear descriptions when using `not` to help schema consumers understand what is being rejected
+- Consider whether positive assertions might be clearer than negative ones
+- Use `not` sparingly and only when exclusion logic is truly necessary
+- Combine with `if`/`then`/`else` for complex conditional validation

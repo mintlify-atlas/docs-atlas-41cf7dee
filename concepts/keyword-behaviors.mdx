@@ -1,0 +1,180 @@
+---
+title: Keyword Behaviors
+description: Understanding how JSON Schema keywords validate, annotate, and apply subschemas
+---
+
+JSON Schema keywords exhibit specific behaviors that determine how they process and evaluate instances. This document explains the three primary behavioral categories.
+
+## Overview
+
+Keywords may exhibit one or more of three fundamental behaviors:
+
+- **Assertions** - Validate that an instance satisfies constraints
+- **Annotations** - Attach information to instance locations
+- **Applicators** - Apply subschemas and combine their results
+
+Extension keywords should be defined using these behaviors, keeping in mind that annotations are extremely flexible. Complex behavior is usually better delegated to applications on the basis of annotation data than implemented directly as schema keywords.
+
+<Note>
+Implementations should not add unspecified behaviors to keywords.
+</Note>
+
+## Assertions
+
+Assertions validate that an instance satisfies constraints, producing a boolean result: `true` if the constraints are satisfied; `false` otherwise.
+
+When an instance "validates against a keyword," it means the keyword produces an assertion result of `true` if the instance satisfies the given constraint; otherwise an assertion result of `false` is produced.
+
+### Type-Specific Constraints
+
+Most assertions only constrain values within a certain primitive type. When the instance type doesn't match the type targeted by the keyword, the instance is considered to conform to the assertion.
+
+**Example:** The `maxLength` keyword only restricts strings that are too long. If the instance is a number, boolean, null, array, or object, it is valid against this assertion.
+
+```json
+{
+  "type": ["string", "null"],
+  "maxLength": 255
+}
+```
+
+This schema allows either a string with maximum length 255, or a null value. If `maxLength` also restricted the instance type to be a string, this would be more cumbersome to express.
+
+### Failed Assertions
+
+An instance can only fail an assertion that is present in the schema. JSON Schema implementations produce a single boolean result when evaluating an instance against schema assertions.
+
+## Annotations
+
+Annotations attach information to specific locations in an instance for application use. Unlike assertions, annotation data can take various forms and is provided to applications to use as they see fit.
+
+### Annotation Collection
+
+JSON Schema can annotate an instance with information whenever the instance validates against the schema object containing the annotation, and all of its parent schema objects.
+
+A collected annotation must include:
+
+- The name of the keyword that produces the annotation
+- The instance location (as a JSON Pointer)
+- The evaluation path
+- The absolute schema location (as an IRI)
+- The attached value(s)
+
+### Default Annotation Values
+
+Unless otherwise specified, a keyword's annotation value is the value of the keyword itself. However, other behaviors are possible.
+
+**Example:**
+```json
+{
+  "title": "Feature list",
+  "type": "array",
+  "prefixItems": [
+    {
+      "title": "Feature A",
+      "properties": {
+        "enabled": {
+          "$ref": "#/$defs/enabledToggle",
+          "default": true
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "enabledToggle": {
+      "title": "Enabled",
+      "type": ["boolean", "null"],
+      "default": null
+    }
+  }
+}
+```
+
+Applications may make decisions on which annotation values to use based on the schema location. The evaluation path helps distinguish between multiple annotation values from different schema locations.
+
+### Annotations and Failed Assertions
+
+<Warning>
+Schema objects that produce a false assertion result must not produce any annotation results, whether from their own keywords or from keywords in subschemas.
+</Warning>
+
+**Example:**
+```json
+{
+  "oneOf": [
+    {
+      "title": "Integer Value",
+      "type": "integer"
+    },
+    {
+      "title": "String Value",
+      "type": "string"
+    }
+  ]
+}
+```
+
+Against the instance `"This is a string"`, the title annotation "Integer Value" is discarded because the type assertion fails. The title "String Value" is kept.
+
+### Short-Circuit Evaluation
+
+While "short-circuit" evaluation is possible for assertions, collecting annotations requires examining all schemas that apply to an instance location, even if they cannot change the overall assertion result.
+
+<Note>
+The only exception is that subschemas of a schema object that has failed validation may be skipped, as annotations are not retained for failing schemas.
+</Note>
+
+## Applicators
+
+Applicators apply subschemas to parts of the instance and combine or modify their results. They allow for building more complex schemas than can be accomplished with a single schema object.
+
+### How Applicators Work
+
+Applicators determine which additional schemas are applied during evaluation. Such schemas may be:
+
+- Present as subschemas comprising all or part of the keyword's value
+- Referenced from elsewhere in the same schema document
+- Referenced from a different schema document
+
+### Assertion Behavior
+
+Applicator keywords behave as assertions, using the assertion results of each subschema or referenced schema. These boolean results are:
+
+- **Modified** - e.g., the `not` keyword negates its subschema's assertion
+- **Combined** - e.g., `allOf` takes the conjunction of its subschemas' assertions
+
+Applicators may apply any boolean logic operation to subschema assertion results, but should not introduce new assertion conditions of their own.
+
+### Annotation Preservation
+
+Annotation results from subschemas are preserved so applications can decide how to interpret multiple values. Applicator keywords do not play a direct role in this preservation.
+
+## Keyword Interactions
+
+Unless otherwise specified, keywords act independently. However, keywords may modify their behavior based on the presence, absence, or value of another keyword in the same schema object.
+
+### Dependency Types
+
+**Static dependencies** - The dependency relies on the presence or contents of another keyword.
+
+**Dynamic dependencies** - The dependency relies on the evaluation of another keyword against an instance. This may depend on either:
+- Annotations produced by the keyword
+- Validation result of its subschema(s)
+
+<Warning>
+Keywords must not result in circular dependencies.
+</Warning>
+
+## Default Behaviors
+
+A missing keyword:
+
+- Must not produce a false assertion result
+- Must not produce annotation results
+- Must not cause any other schema to be evaluated as part of its behavioral definition
+
+In some cases, the missing keyword assertion behavior is identical to that produced by a certain value. However, even if that value would produce annotation results, the default behavior still must not result in annotations.
+
+<Info>
+Because annotation collection can add significant cost in computation and memory, implementations may opt out of this feature. Keywords specified in terms of collected annotations should describe reasonable alternate approaches when appropriate.
+</Info>

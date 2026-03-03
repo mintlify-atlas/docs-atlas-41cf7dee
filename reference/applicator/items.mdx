@@ -1,0 +1,283 @@
+---
+title: items
+description: Apply a schema to array items
+---
+
+The `items` keyword applies a schema to elements of an array instance. It can validate all array elements or only those not covered by `prefixItems`.
+
+## Syntax
+
+```json
+{
+  "items": { /* schema to apply to array items */ }
+}
+```
+
+The value must be a valid JSON Schema.
+
+## Behavior
+
+The `items` keyword validates array elements with these rules:
+
+- If `prefixItems` is present in the same schema object, `items` applies its schema to elements **after** those validated by `prefixItems`
+- If `prefixItems` is absent, `items` applies its schema to **all** elements
+- If `prefixItems` validates more elements than exist in the array, `items` validates nothing
+- Produces a boolean `true` annotation when applied to any elements
+- Affects the behavior of `unevaluatedItems`
+
+## Examples
+
+### Uniform Array
+
+Validate all elements with the same schema:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "string"
+  }
+}
+```
+
+Valid: `["a", "b", "c"]`, `[]`  
+Invalid: `[1, 2, 3]`, `["a", 1, "b"]`
+
+### Array of Objects
+
+Validate array of structured objects:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "integer" },
+      "name": { "type": "string" }
+    },
+    "required": ["id", "name"]
+  }
+}
+```
+
+Valid:
+```json
+[
+  { "id": 1, "name": "Alice" },
+  { "id": 2, "name": "Bob" }
+]
+```
+
+Invalid:
+```json
+[
+  { "id": 1 },
+  { "name": "Bob" }
+]
+```
+
+### With prefixItems
+
+Combine with `prefixItems` for mixed arrays:
+
+```json
+{
+  "type": "array",
+  "prefixItems": [
+    { "type": "string" },
+    { "type": "integer" }
+  ],
+  "items": {
+    "type": "boolean"
+  }
+}
+```
+
+This validates:
+- Index 0: must be a string
+- Index 1: must be an integer  
+- Index 2+: must be booleans
+
+Valid: `["hello", 42]`, `["hello", 42, true, false]`  
+Invalid: `["hello", 42, "extra"]`
+
+### Nested Arrays
+
+Validate arrays of arrays:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "array",
+    "items": {
+      "type": "number"
+    },
+    "minItems": 2,
+    "maxItems": 2
+  }
+}
+```
+
+Valid:
+```json
+[
+  [1.0, 2.0],
+  [3.0, 4.0],
+  [5.0, 6.0]
+]
+```
+
+This represents a 2D array where each sub-array must have exactly 2 numbers.
+
+### Array with Length Constraints
+
+Combine with array length keywords:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 10
+  },
+  "minItems": 1,
+  "maxItems": 5
+}
+```
+
+Valid: `["a"]`, `["hello", "world"]`  
+Invalid: `[]` (too few items), `["a", "b", "c", "d", "e", "f"]` (too many items), `[""]` (empty string)
+
+### Tagged Union Array
+
+Array of polymorphic objects:
+
+```json
+{
+  "type": "array",
+  "items": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "type": { "const": "text" },
+          "content": { "type": "string" }
+        },
+        "required": ["type", "content"]
+      },
+      {
+        "type": "object",
+        "properties": {
+          "type": { "const": "image" },
+          "url": { "type": "string", "format": "uri" }
+        },
+        "required": ["type", "url"]
+      }
+    ]
+  }
+}
+```
+
+Valid:
+```json
+[
+  { "type": "text", "content": "Hello" },
+  { "type": "image", "url": "https://example.com/pic.jpg" }
+]
+```
+
+### No Additional Items After Prefix
+
+Prohibit items beyond those in `prefixItems`:
+
+```json
+{
+  "type": "array",
+  "prefixItems": [
+    { "type": "string" },
+    { "type": "number" }
+  ],
+  "items": false
+}
+```
+
+Valid: `["hello", 42]`  
+Invalid: `["hello", 42, "extra"]`
+
+### Strict Tuple
+
+Define a fixed-length tuple with no additional items:
+
+```json
+{
+  "type": "array",
+  "prefixItems": [
+    { "type": "number" },
+    { "type": "number" },
+    { "type": "number" }
+  ],
+  "items": false,
+  "minItems": 3,
+  "maxItems": 3
+}
+```
+
+Valid: `[1.0, 2.0, 3.0]`  
+Invalid: `[1, 2]`, `[1, 2, 3, 4]`
+
+## Interaction with prefixItems
+
+The `prefixItems` keyword validates a specific number of leading array elements. The `items` keyword then validates remaining elements:
+
+```json
+{
+  "type": "array",
+  "prefixItems": [
+    { "type": "integer" },
+    { "type": "integer" }
+  ],
+  "items": { "type": "string" }
+}
+```
+
+- Array `[1, 2]`: First two validated by `prefixItems`, no items for `items` → valid
+- Array `[1, 2, "a", "b"]`: First two by `prefixItems`, rest by `items` → valid  
+- Array `[1, 2, 3]`: Third element fails `items` (not a string) → invalid
+
+## Annotations
+
+When `items` applies its schema to any array elements, it produces an annotation with boolean value `true`. This annotation indicates that all remaining array elements have been evaluated.
+
+This annotation affects `unevaluatedItems` behavior.
+
+## Default Behavior
+
+Omitting the `items` keyword has the same assertion behavior as an empty schema - all items are valid, but no annotation is produced.
+
+## Common Use Cases
+
+- **Homogeneous arrays**: Arrays where all elements have the same type/structure
+- **Lists**: Collections of similar items (users, products, events)
+- **Variable-length tuples**: Fixed prefix with variable tail
+- **Nested data**: Arrays of objects or arrays of arrays
+- **API responses**: Validate array-based response payloads
+
+## Notes
+
+- Prior to draft 2020-12, `items` could be either a schema or an array of schemas
+- The array form is now handled by `prefixItems`
+- Always use `type: "array"` when using `items`
+- Combine with `minItems`/`maxItems` for length constraints
+- Use `uniqueItems: true` to require distinct elements
+- The `contains` keyword provides different semantics (at least N items matching)
+
+## Best Practices
+
+- Be explicit about whether arrays should be homogeneous or have a tuple structure
+- Use `prefixItems` + `items: false` for strict tuples
+- Use `items` alone for homogeneous arrays
+- Combine `prefixItems` + `items` for "at least N specific items, then more of type X"
+- Consider `contains` when you need "at least one item matching" semantics

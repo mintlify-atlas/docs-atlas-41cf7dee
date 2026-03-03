@@ -1,0 +1,462 @@
+---
+title: Object Validation
+description: Keywords for validating object properties and requirements
+---
+
+JSON Schema provides several keywords for validating object instances.
+
+## minProperties
+
+Specifies the minimum number of properties an object must have.
+
+### Syntax
+
+The value must be a non-negative integer.
+
+```json
+{
+  "minProperties": 1
+}
+```
+
+### Validation Rules
+
+An object instance is valid if its number of properties is greater than or equal to the specified value.
+
+### Default Behavior
+
+Omitting `minProperties` is equivalent to `minProperties: 0`, which allows empty objects.
+
+### Examples
+
+#### Non-Empty Object
+
+```json
+{
+  "type": "object",
+  "minProperties": 1
+}
+```
+
+Valid instances:
+```json
+{"a": 1}
+{"a": 1, "b": 2}
+{"name": "John"}
+```
+
+Invalid instances:
+```json
+{}
+```
+
+#### At Least Two Properties
+
+```json
+{
+  "type": "object",
+  "minProperties": 2
+}
+```
+
+Valid instances:
+```json
+{"a": 1, "b": 2}
+{"name": "John", "age": 30}
+```
+
+Invalid instances:
+```json
+{}
+{"a": 1}
+```
+
+## maxProperties
+
+Specifies the maximum number of properties an object can have.
+
+### Syntax
+
+The value must be a non-negative integer.
+
+```json
+{
+  "maxProperties": 5
+}
+```
+
+### Validation Rules
+
+An object instance is valid if its number of properties is less than or equal to the specified value.
+
+### Examples
+
+#### Limited Properties
+
+```json
+{
+  "type": "object",
+  "maxProperties": 3
+}
+```
+
+Valid instances:
+```json
+{}
+{"a": 1}
+{"a": 1, "b": 2, "c": 3}
+```
+
+Invalid instances:
+```json
+{"a": 1, "b": 2, "c": 3, "d": 4}
+```
+
+#### Single Property Object
+
+```json
+{
+  "type": "object",
+  "maxProperties": 1
+}
+```
+
+Valid instances:
+```json
+{}
+{"status": "active"}
+```
+
+Invalid instances:
+```json
+{"status": "active", "code": 200}
+```
+
+## required
+
+Specifies which properties must be present in an object.
+
+### Syntax
+
+The value must be an array of strings. Elements must be unique.
+
+```json
+{
+  "required": ["name", "email"]
+}
+```
+
+### Validation Rules
+
+An object instance is valid if every property name in the `required` array exists in the object.
+
+### Default Behavior
+
+Omitting `required` is equivalent to an empty array, meaning no properties are required.
+
+### Examples
+
+#### Required Fields
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "email": {"type": "string"},
+    "age": {"type": "integer"}
+  },
+  "required": ["name", "email"]
+}
+```
+
+Valid instances:
+```json
+{"name": "John", "email": "john@example.com"}
+{"name": "Jane", "email": "jane@example.com", "age": 30}
+```
+
+Invalid instances:
+```json
+{"name": "John"}                    // Missing email
+{"email": "john@example.com"}       // Missing name
+{}                                   // Missing both
+```
+
+#### Single Required Field
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {"type": "integer"},
+    "description": {"type": "string"}
+  },
+  "required": ["id"]
+}
+```
+
+Valid instances:
+```json
+{"id": 1}
+{"id": 1, "description": "Item description"}
+```
+
+Invalid instances:
+```json
+{"description": "Item description"}
+{}
+```
+
+#### All Properties Required
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {"type": "string"},
+    "password": {"type": "string"}
+  },
+  "required": ["username", "password"]
+}
+```
+
+Valid instance:
+```json
+{"username": "johndoe", "password": "secret123"}
+```
+
+Invalid instances:
+```json
+{"username": "johndoe"}
+{"password": "secret123"}
+{}
+```
+
+## dependentRequired
+
+Specifies properties that are required if another specific property is present.
+
+### Syntax
+
+The value must be an object. Each property's value must be an array of strings (property names). Array elements must be unique.
+
+```json
+{
+  "dependentRequired": {
+    "property1": ["property2", "property3"]
+  }
+}
+```
+
+### Validation Rules
+
+For each property name that appears both in the instance and as a key in `dependentRequired`, every property name in the corresponding array must also exist in the instance.
+
+### Default Behavior
+
+Omitting `dependentRequired` is equivalent to an empty object, meaning no dependent requirements.
+
+### Examples
+
+#### Credit Card Information
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": {"type": "string"},
+    "credit_card": {"type": "string"},
+    "billing_address": {"type": "string"}
+  },
+  "dependentRequired": {
+    "credit_card": ["billing_address"]
+  }
+}
+```
+
+Valid instances:
+```json
+{"name": "John"}                                           // No credit_card, no requirement
+{"name": "John", "credit_card": "1234", "billing_address": "123 Main St"}  // Has both
+```
+
+Invalid instances:
+```json
+{"name": "John", "credit_card": "1234"}  // Missing billing_address
+```
+
+#### Multiple Dependencies
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "first_name": {"type": "string"},
+    "last_name": {"type": "string"},
+    "phone": {"type": "string"},
+    "country_code": {"type": "string"}
+  },
+  "dependentRequired": {
+    "phone": ["country_code"],
+    "country_code": ["phone"]
+  }
+}
+```
+
+Valid instances:
+```json
+{"first_name": "John", "last_name": "Doe"}
+{"first_name": "John", "last_name": "Doe", "phone": "+1234567890", "country_code": "+1"}
+```
+
+Invalid instances:
+```json
+{"first_name": "John", "phone": "+1234567890"}        // Missing country_code
+{"first_name": "John", "country_code": "+1"}          // Missing phone
+```
+
+#### Multiple Required Properties
+
+```json
+{
+  "type": "object",
+  "dependentRequired": {
+    "shipping_method": ["shipping_address", "shipping_city", "shipping_zip"]
+  }
+}
+```
+
+If `shipping_method` is present, all three shipping address fields are required.
+
+## Combining Object Keywords
+
+Multiple object validation keywords can be used together.
+
+### Property Count Range
+
+```json
+{
+  "type": "object",
+  "minProperties": 1,
+  "maxProperties": 5
+}
+```
+
+This validates objects with 1 to 5 properties:
+```json
+{"a": 1}
+{"a": 1, "b": 2, "c": 3}
+```
+
+Invalid:
+```json
+{}                                        // Too few
+{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6}  // Too many
+```
+
+### User Profile
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {"type": "string"},
+    "email": {"type": "string"},
+    "age": {"type": "integer"},
+    "bio": {"type": "string"}
+  },
+  "required": ["username", "email"],
+  "minProperties": 2,
+  "maxProperties": 10
+}
+```
+
+Valid instance:
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "age": 30
+}
+```
+
+### Configuration Object
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "host": {"type": "string"},
+    "port": {"type": "integer"},
+    "ssl": {"type": "boolean"},
+    "ssl_cert": {"type": "string"},
+    "ssl_key": {"type": "string"}
+  },
+  "required": ["host"],
+  "dependentRequired": {
+    "ssl": ["ssl_cert", "ssl_key"]
+  }
+}
+```
+
+Valid instances:
+```json
+{"host": "example.com"}                                    // Minimal config
+{"host": "example.com", "port": 443, "ssl": true, "ssl_cert": "cert.pem", "ssl_key": "key.pem"}
+```
+
+Invalid:
+```json
+{}                                          // Missing required host
+{"host": "example.com", "ssl": true}        // Missing ssl_cert and ssl_key
+```
+
+### Address Validation
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "street": {"type": "string"},
+    "city": {"type": "string"},
+    "state": {"type": "string"},
+    "zip": {"type": "string"},
+    "country": {"type": "string"}
+  },
+  "required": ["street", "city", "country"],
+  "dependentRequired": {
+    "state": ["zip"],
+    "zip": ["state"]
+  },
+  "minProperties": 3
+}
+```
+
+This ensures:
+- At least 3 properties total
+- Street, city, and country are always required
+- If state is provided, zip must be provided (and vice versa)
+
+### Exact Property Count
+
+```json
+{
+  "type": "object",
+  "minProperties": 2,
+  "maxProperties": 2
+}
+```
+
+This validates objects with exactly 2 properties:
+```json
+{"x": 10, "y": 20}
+{"width": 100, "height": 200}
+```
+
+## Use Cases
+
+- **minProperties**: Ensure objects are not empty or have minimum data
+- **maxProperties**: Limit object complexity or size
+- **required**: Enforce mandatory fields for data integrity
+- **dependentRequired**: Model conditional requirements (e.g., if shipping is selected, shipping address is required)

@@ -1,0 +1,114 @@
+---
+title: $vocabulary
+description: Declares which vocabularies a meta-schema uses and whether they are required
+---
+
+The `$vocabulary` keyword is used in meta-schemas to declare which vocabularies are available and whether they are required or optional for schemas using that meta-schema.
+
+## Syntax
+
+<ParamField path="$vocabulary" type="object">
+  An object where each property name is a vocabulary IRI and each value is a boolean indicating whether the vocabulary is required (true) or optional (false).
+</ParamField>
+
+## Purpose
+
+The `$vocabulary` keyword enables:
+
+1. **Vocabulary Declaration**: Explicitly states which keyword vocabularies a meta-schema supports
+2. **Requirement Specification**: Indicates whether implementations must support each vocabulary
+3. **Extension Management**: Controls which keywords are available in schemas that use the meta-schema
+
+## Usage
+
+### Format
+
+```json
+{
+  "$vocabulary": {
+    "https://json-schema.org/draft/2020-12/vocab/core": true,
+    "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+    "https://json-schema.org/draft/2020-12/vocab/validation": true,
+    "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+    "https://example.com/vocab/custom": false
+  }
+}
+```
+
+### Required vs Optional Vocabularies
+
+- **Required (`true`)**: Implementations MUST support this vocabulary to process schemas using this meta-schema. Vocabularies omitted from `$vocabulary` MUST NOT be available.
+- **Optional (`false`)**: Implementations MAY support this vocabulary. If unsupported, keywords from this vocabulary are treated according to the implementation's handling of unrecognized keywords.
+
+## Examples
+
+### Meta-Schema with Standard Vocabularies
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://json-schema.org/draft/2020-12/schema",
+  "$vocabulary": {
+    "https://json-schema.org/draft/2020-12/vocab/core": true,
+    "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+    "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
+    "https://json-schema.org/draft/2020-12/vocab/validation": true,
+    "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+    "https://json-schema.org/draft/2020-12/vocab/format-annotation": true,
+    "https://json-schema.org/draft/2020-12/vocab/content": true
+  },
+  "$dynamicAnchor": "meta",
+  "type": ["object", "boolean"]
+}
+```
+
+### Custom Meta-Schema with Extension
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/meta/custom",
+  "$vocabulary": {
+    "https://json-schema.org/draft/2020-12/vocab/core": true,
+    "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+    "https://json-schema.org/draft/2020-12/vocab/validation": true,
+    "https://example.com/vocab/extended-validation": false
+  },
+  "allOf": [
+    { "$ref": "https://json-schema.org/draft/2020-12/meta/core" },
+    { "$ref": "https://json-schema.org/draft/2020-12/meta/applicator" },
+    { "$ref": "https://example.com/vocab/extended-validation" }
+  ]
+}
+```
+
+In this example, the custom vocabulary is optional, allowing schemas to use the meta-schema even if the implementation doesn't support the extended validation keywords.
+
+## Vocabulary Control
+
+### Standard Keywords
+
+Standard keywords are only available as vocabulary keywords and are subject to `$vocabulary` control. This means:
+
+- Keywords from vocabularies not listed in `$vocabulary` are not available
+- Implementations must check vocabulary support before processing schemas
+- Unknown required vocabularies should cause schema processing to fail
+
+### Extension Keywords
+
+Extension keywords (those not in standard vocabularies) are handled differently:
+
+- Keywords beginning with `x-` are implicitly annotation keywords
+- Other extension keywords require explicit vocabulary declaration
+- Unrecognized keywords cause implementations to refuse evaluation
+
+## Meta-Schema Context
+
+The `$vocabulary` keyword is primarily used in meta-schemas, not in regular schemas. A meta-schema is a schema that validates other schemas and defines which keywords those schemas can use.
+
+Regular schemas typically don't use `$vocabulary` directly. Instead, they use `$schema` to reference a meta-schema that declares its vocabularies.
+
+## Related Keywords
+
+- [`$schema`](/reference/core/schema) - References a meta-schema that uses `$vocabulary`
+- [`$id`](/reference/core/id) - Identifies vocabulary IRIs and meta-schema resources

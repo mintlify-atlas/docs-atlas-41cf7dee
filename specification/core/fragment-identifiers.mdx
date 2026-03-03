@@ -1,0 +1,305 @@
+---
+title: Fragment Identifiers for Schemas
+description: Understanding JSON Pointer and plain name fragment identifiers for referencing schemas and subschemas
+---
+
+JSON Schema uses two fragment identifier structures to identify and reference schemas and subschemas: **plain names** and **JSON Pointers**. Any media types defined for JSON Schema MUST support these structures.
+
+## Fragment Identifier Types
+
+<CardGroup cols={2}>
+  <Card title="JSON Pointer Fragments" icon="arrow-pointer">
+    Fragment identifiers that start with `/` or are the empty string. Structural, location-based references.
+  </Card>
+  <Card title="Plain Name Fragments" icon="tag">
+    All other fragment identifiers. Location-independent references defined by `$anchor`.
+  </Card>
+</CardGroup>
+
+## JSON Pointer Fragment Identifiers
+
+The use of JSON Pointers as IRI fragment identifiers is described in [RFC 6901](https://www.rfc-editor.org/rfc/rfc6901.html).
+
+Fragment identifiers that start with `/` or are the empty string MUST be interpreted as JSON Pointer fragment identifiers.
+
+### Structure-Based References
+
+JSON Pointers navigate the structure of a JSON document using a syntax of slash-separated path segments:
+
+```json
+{
+  "$id": "https://example.com/schema.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" }
+  },
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+References using JSON Pointers:
+
+<AccordionGroup>
+  <Accordion title="https://example.com/schema.json#">
+    Empty fragment - references the entire root schema
+  </Accordion>
+  
+  <Accordion title="https://example.com/schema.json#/properties/name">
+    References the "name" property schema (type: string)
+  </Accordion>
+  
+  <Accordion title="https://example.com/schema.json#/$defs/address">
+    References the "address" definition in $defs
+  </Accordion>
+  
+  <Accordion title="https://example.com/schema.json#/$defs/address/properties/city">
+    References the "city" property within the address definition
+  </Accordion>
+</AccordionGroup>
+
+### Limitations of JSON Pointers
+
+<Warning>
+JSON Pointer fragment identifiers are based on the structure of the schema document. This creates fragility when schemas are reorganized or when embedded schemas are extracted to separate documents.
+</Warning>
+
+Consider this schema with an embedded resource:
+
+```json
+{
+  "$id": "https://example.com/foo",
+  "items": {
+    "$id": "https://example.com/bar",
+    "additionalProperties": {}
+  }
+}
+```
+
+The IRI `https://example.com/foo#/items/additionalProperties` points to the correct object, but:
+
+- It's relative to the "foo" resource's base IRI
+- If the embedded "bar" resource is extracted to a separate document, this reference breaks
+- The canonical IRI relative to "bar" is `https://example.com/bar#/additionalProperties`
+
+After extraction to separate documents:
+
+```json
+// foo.json
+{
+  "$id": "https://example.com/foo",
+  "items": {
+    "$ref": "bar"
+  }
+}
+```
+
+```json
+// bar.json
+{
+  "$id": "https://example.com/bar",
+  "additionalProperties": {}
+}
+```
+
+Now `https://example.com/foo#/items/additionalProperties` no longer resolves correctly.
+
+<Note>
+Applications and schemas SHOULD NOT use JSON Pointer IRIs to identify embedded schema resources or locations within them. Use plain name fragments with `$anchor` instead for location-independent references.
+</Note>
+
+## Plain Name Fragment Identifiers
+
+Plain name fragment identifiers are reserved for referencing locally named schemas. All fragment identifiers that are not interpreted as JSON Pointers MUST be interpreted as plain name fragment identifiers.
+
+### Defining Plain Name Fragments with `$anchor`
+
+Defining a plain name fragment identifier within a schema resource is done using the `$anchor` keyword.
+
+The value of `$anchor` MUST be a string conforming to the NCName production:
+
+```abnf
+NCName          = NCNameStartChar *NCNameChar
+NCNameStartChar = "_" / ALPHA
+                      / %xC0-D6 / %xD8-F6 / %xF8-2FF
+                      / %x370-37D / %x37F-1FFF
+                      / %x200C-200D / %x2070-218F
+                      / %x2C00-2FEF / %x3001-D7FF
+                      / %xF900-FDCF / %xFDF0-FFFD
+                      / %x10000-EFFFF
+NCNameChar      = NCNameStartChar / "-" / "." / DIGIT
+                      / %xB7 / %x0300-036F / %x203F-2040
+```
+
+In practice, this means:
+
+- Must start with a letter or underscore
+- Can contain letters, digits, underscores, hyphens, and periods
+- No spaces or special characters
+
+### Location-Independent References
+
+Plain name fragments provide location-independent identification. A subschema can be relocated without requiring references to be updated:
+
+```json
+{
+  "$id": "https://example.com/product.json",
+  "type": "object",
+  "properties": {
+    "id": { "$ref": "#product-id" },
+    "sku": { "$ref": "#product-id" }
+  },
+  "$defs": {
+    "identifier": {
+      "$anchor": "product-id",
+      "type": "string",
+      "pattern": "^[A-Z]{2}[0-9]{6}$"
+    }
+  }
+}
+```
+
+The references using `#product-id` remain valid even if:
+
+- The definition is moved to a different location in `$defs`
+- The definition is moved to a different schema object
+- The schema is restructured
+
+<Tip>
+The anchor string does not include the "#" character. To reference the "product-id" anchor, use `#product-id`, not `product-id`.
+</Tip>
+
+### Benefits of Plain Name Fragments
+
+<CardGroup cols={2}>
+  <Card title="Stability" icon="anchor">
+    References don't break when schema structure changes
+  </Card>
+  
+  <Card title="Readability" icon="eye">
+    Semantic names like `#user-address` are clearer than `#/$defs/schemas/address`
+  </Card>
+  
+  <Card title="Portability" icon="box">
+    Subschemas can be moved between documents without updating references
+  </Card>
+  
+  <Card title="Intent" icon="bullseye">
+    Makes it clear which subschemas are intended for reuse
+  </Card>
+</CardGroup>
+
+## Fragment Identifier Examples
+
+Consider this comprehensive schema:
+
+```json
+{
+  "$id": "https://example.com/root.json",
+  "$defs": {
+    "A": { "$anchor": "foo" },
+    "B": {
+      "$id": "other.json",
+      "$defs": {
+        "X": { "$anchor": "bar" },
+        "Y": {
+          "$id": "t/inner.json",
+          "$anchor": "bar"
+        }
+      }
+    },
+    "C": {
+      "$id": "urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f"
+    }
+  }
+}
+```
+
+### Valid References
+
+<Tabs>
+  <Tab title="Document Root">
+    - Canonical IRI: `https://example.com/root.json`
+    - With pointer fragment: `https://example.com/root.json#`
+  </Tab>
+  
+  <Tab title="$defs/A">
+    - Base IRI: `https://example.com/root.json`
+    - Plain fragment: `https://example.com/root.json#foo`
+    - Pointer fragment: `https://example.com/root.json#/$defs/A`
+  </Tab>
+  
+  <Tab title="$defs/B">
+    - Canonical IRI: `https://example.com/other.json`
+    - With pointer fragment: `https://example.com/other.json#`
+  </Tab>
+  
+  <Tab title="$defs/B/$defs/X">
+    - Base IRI: `https://example.com/other.json`
+    - Plain fragment: `https://example.com/other.json#bar`
+    - Pointer fragment: `https://example.com/other.json#/$defs/X`
+  </Tab>
+  
+  <Tab title="$defs/B/$defs/Y">
+    - Canonical IRI: `https://example.com/t/inner.json`
+    - Plain fragment: `https://example.com/t/inner.json#bar`
+    - Pointer fragment: `https://example.com/t/inner.json#`
+  </Tab>
+  
+  <Tab title="$defs/C">
+    - Canonical IRI: `urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f`
+    - With pointer fragment: `urn:uuid:ee564b8a-7a87-4125-8c96-e9f123d6766f#`
+  </Tab>
+</Tabs>
+
+### References to Avoid
+
+These IRIs technically work but should be avoided because they reference across resource boundaries:
+
+<Warning>
+- `https://example.com/root.json#/$defs/B` (crosses to embedded resource "other.json")
+- `https://example.com/root.json#/$defs/B/$defs/X` (crosses resource boundary)
+- `https://example.com/other.json#/$defs/Y` (crosses to embedded resource "inner.json")
+- `https://example.com/root.json#/$defs/C` (crosses resource boundary)
+</Warning>
+
+These references are fragile and may not work in all implementations, especially if the schemas are later separated into different documents.
+
+## Best Practices
+
+<Steps>
+  <Step title="Use $anchor for reusable schemas">
+    Define anchors for any subschema you expect to reference multiple times or that represents a stable concept.
+  </Step>
+  
+  <Step title="Avoid JSON Pointer fragments across resource boundaries">
+    Don't use JSON Pointer fragments to reference into embedded schema resources. Use the embedded resource's canonical IRI instead.
+  </Step>
+  
+  <Step title="Choose semantic anchor names">
+    Use descriptive names like `user-profile` or `email-address` rather than generic names like `def1` or `schema-a`.
+  </Step>
+  
+  <Step title="Document your anchors">
+    Add `title` or `description` to anchored schemas to explain their purpose.
+  </Step>
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Schema Structure" href="./schemas" icon="sitemap">
+    Learn about schema composition and references
+  </Card>
+  <Card title="Core Keywords" href="../keywords/core" icon="dollar-sign">
+    Explore the `$id`, `$anchor`, and `$ref` keywords
+  </Card>
+</CardGroup>

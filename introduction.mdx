@@ -1,0 +1,113 @@
+---
+title: JSON Schema - A Language for Validating and Annotating JSON
+description: JSON Schema is a powerful, standardized vocabulary for validating, annotating, and documenting JSON data structures. Define contracts for your APIs and data formats with ease.
+---
+
+# JSON Schema: A Language for Validating and Annotating JSON
+
+JSON Schema is a domain-specific, declarative language for validating and annotating JSON documents. It provides a standardized way to define the structure, constraints, and metadata associated with JSON-based APIs and data formats, facilitating automated validation, documentation, and related tooling.
+
+<Note>
+JSON is excellent for data exchange, but lacks a native mechanism for formally describing its structure and constraints. JSON Schema fills this gap, reducing ambiguity and errors in data interchange.
+</Note>
+
+## Why JSON Schema?
+
+JSON Schema draws inspiration from the architecture of the World Wide Web, including concepts such as URIs for identifying and linking schemas. While it can be applied in many domains, these qualities make it especially well-suited for describing and validating data exchanged in web APIs.
+
+<CardGroup cols={2}>
+  <Card title="Validation" icon="check-circle">
+    Ensure that JSON instances conform to a specific structure and set of constraints. Catch data errors before they cause problems.
+  </Card>
+  
+  <Card title="Annotation" icon="tag">
+    Attach metadata to values in JSON documents, which can be used by applications for documentation, form generation, and more.
+  </Card>
+  
+  <Card title="Documentation" icon="book">
+    Schemas serve as living documentation that describes your data structures in a machine-readable format.
+  </Card>
+  
+  <Card title="Interoperability" icon="arrows-left-right">
+    Create a contract for data exchange between systems, ensuring compatibility across different implementations.
+  </Card>
+</CardGroup>
+
+## Key Features
+
+### Self-Describing
+
+A JSON Schema is itself a JSON document, making it easily portable and machine-readable. You can validate schemas, share them across systems, and even generate schemas programmatically.
+
+### Extensible
+
+JSON Schema includes a flexible extension model that allows third parties to define their own dialects and vocabularies for specific use cases.
+
+### Standards-Based
+
+JSON Schema is defined through IETF Internet-Drafts and maintained by an active open-source community, ensuring stability and broad industry support.
+
+## Core Concepts
+
+<CardGroup cols={2}>
+  <Card title="What is JSON Schema?" icon="circle-question" href="/what-is-json-schema">
+    Learn about the fundamentals, terminology, and use cases for JSON Schema.
+  </Card>
+  
+  <Card title="Getting Started" icon="rocket" href="/getting-started">
+    Write your first schema with a practical example that validates JSON data.
+  </Card>
+</CardGroup>
+
+## A Schema as a Contract
+
+A JSON Schema serves as a contract for data. It is primarily designed for two purposes:
+
+1. **Validation** - Ensures that a JSON instance conforms to a specific structure and set of constraints
+2. **Annotation** - Attaches metadata to values in a JSON document, which can be used by applications in a variety of ways
+
+JSON Schema can also be used for documentation generation, HTML form builders, and type code generation. Although it is not specifically designed for those tasks, JSON Schema can be extended to fill any gaps required to support these secondary uses.
+
+## Specification Structure
+
+The JSON Schema specification is defined in a series of documents, each addressing a different aspect of the language:
+
+- **Core Specification** - Defines fundamental keywords and concepts (`$schema`, `$id`, `$ref`, `$defs`, etc.)
+- **Validation Specification** - Defines keywords for structural validation (`type`, `properties`, `required`, `pattern`, etc.)
+- **Additional vocabularies** - Define specialized keywords for specific use cases
+
+<Warning>
+This documentation is based on the v1/2026 specification. Implementations may continue to support earlier "draft" releases for backward compatibility.
+</Warning>
+
+## Community and Support
+
+<CardGroup cols={3}>
+  <Card title="Specification" icon="file-lines" href="https://json-schema.org/specification">
+    Read the official IETF specification documents
+  </Card>
+  
+  <Card title="GitHub" icon="github" href="https://github.com/json-schema-org/json-schema-spec">
+    Contribute to the specification and report issues
+  </Card>
+  
+  <Card title="Website" icon="globe" href="https://json-schema.org">
+    Explore tools, implementations, and community resources
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<Steps>
+  <Step title="Understand the Basics">
+    Read [What is JSON Schema?](/what-is-json-schema) to learn about instances, schemas, and validation concepts.
+  </Step>
+  
+  <Step title="Write Your First Schema">
+    Follow the [Getting Started](/getting-started) guide to create a working schema example.
+  </Step>
+  
+  <Step title="Explore Advanced Features">
+    Learn about schema composition, references, and advanced validation patterns.
+  </Step>
+</Steps>

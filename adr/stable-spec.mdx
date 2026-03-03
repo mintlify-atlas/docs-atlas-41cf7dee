@@ -1,0 +1,190 @@
+---
+title: Stable Specification Process
+description: Architectural decision to adopt a TC39-inspired stability model for JSON Schema development
+---
+
+# Selecting a New Specification Development Process
+
+**Status**: Accepted  
+**Date**: November 2, 2022  
+**Deciders**: @jdesrosiers, @relequestual, @awwright, @handrews, @gregsdennis
+
+## Overview
+
+After deciding to decouple from IETF, JSON Schema needed a new specification development process. This ADR documents the decision to adopt a TC39-inspired stability model with a mutable specification that can evolve continuously while maintaining strict compatibility guarantees for stable features.
+
+## Context and Problem
+
+With the decision to [decouple from IETF](./decouple-from-ietf), JSON Schema needed to choose a new specification development process to replace the IETF Internet-Draft model.
+
+The community had several key needs:
+- Remove the confusing "draft" label that implied the specification wasn't production-ready
+- Provide a truly stable version of JSON Schema with compatibility guarantees
+- Allow JSON Schema to continue evolving to meet new requirements
+- Support custom keywords, vocabularies, and dialects
+- Reduce the burden on implementations of supporting multiple incompatible versions
+
+<Accordion title="Decision Drivers">
+
+- **Remove "draft" confusion**: The "draft" label from IETF was an artifact that confused users into thinking JSON Schema wasn't production-ready
+- **Stability demand**: The community consistently requested a stable specification with compatibility guarantees
+- **Evolution requirement**: JSON Schema needs to continue evolving like a programming language, not become frozen
+- **Extension support**: Custom keywords, vocabularies, and dialects are important use cases to preserve
+- **Implementation burden**: Supporting multiple incompatible versions creates significant maintenance overhead for implementers
+
+</Accordion>
+
+## Options Considered
+
+Three main approaches were evaluated:
+
+<Accordion title="Option 1: TC39-Inspired (CHOSEN)">
+
+### Overview
+A mutable specification with stability levels for features, similar to TC39's JavaScript standardization process.
+
+### Key Characteristics
+- Convert specification from IETF I-D XML to Markdown
+- Single living specification that can change at any time
+- Features marked with stability levels (unstable → stable)
+- Strict backward and forward compatibility requirements for stable features
+- New features go through a hardening process before stabilization
+- Annual releases designated by year (e.g., JSON Schema 2024)
+- Releases primarily involve promoting unstable features to stable status
+
+### Pros
+- Immediate clarifications and bug fixes without waiting for releases
+- Faster iteration on unstable features with real-world feedback
+- Clear communication to users about which features are stable
+- Compatibility guarantees mean schemas never break with new versions
+- Implementers only need to support current release (automatically compatible with past)
+
+### Cons
+- Mutable spec can be harder to track for implementers and users
+- Requires better communication through blog posts and announcements
+- High barrier for features to reach stability (typically 2 years)
+- Long wait for users who need stable-only features
+
+</Accordion>
+
+<Accordion title="Option 2: IETF-Inspired">
+
+### Overview
+Restructure the specification into "Core Semantics" and "Standard Extensions" with immutable releases.
+
+### Key Characteristics
+- Split into two specifications:
+  - **Core Semantics**: Minimal rules for validators, rarely changes, includes extension mechanism
+  - **Standard Extensions**: Ubiquitous keywords that implementations should support
+- Each release is a new immutable document that replaces previous versions
+- Strict backward and forward compatibility requirements
+- Extensions can be authored by anyone, not just JSON Schema Org
+- Compatible with potential future IETF RFC standardization
+
+### Pros
+- Compatible with IETF process if standardization is pursued later
+- Clear separation between core and extensions
+- Immutable releases provide clear snapshots
+
+### Cons
+- Requires controversial spec restructuring
+- Proposes several controversial new keywords
+- Much longer timeline to reach a stable release
+- Slow feedback loop (must wait for releases for any changes)
+- Higher risk when adding features due to immutability
+
+</Accordion>
+
+<Accordion title="Option 3: Minimal Change">
+
+### Overview
+Continue current practices with minimal modifications.
+
+### Key Characteristics
+- Convert from I-D XML to Markdown for website
+- Continue existing workflow and release cadence
+- Annual releases with mid-cycle patch releases
+- Each release is a distinct version
+- No compatibility guarantees between versions
+
+### Pros
+- No overhead of learning a new process
+- More effort available for improving JSON Schema itself
+- Familiar approach
+
+### Cons
+- Doesn't solve the "draft" label confusion
+- Doesn't provide the stability the community wants
+- Doesn't address versioning challenges
+
+</Accordion>
+
+## Decision Outcome
+
+The team chose **Option 1 (TC39-Inspired)** while leaving the door open for aspects of Option 2 that could be adopted within Option 1's constraints.
+
+### Why Option 1?
+
+1. **Faster time to stability**: A mutable spec allows reaching a stable release much sooner than Option 2's restructuring would permit.
+
+2. **Better feedback loops**: Changes can be made immediately and real-world feedback collected on unstable features before they're locked in as stable.
+
+3. **Flexibility**: The mutable model removes unnecessary roadblocks while still maintaining strict compatibility for stable features.
+
+4. **Single version outcome**: Both Option 1 and 2 achieve a single current version, but Option 1 is more pragmatic.
+
+### What about Option 2's ideas?
+
+The restructuring into "Core Semantics" and "Standard Extensions" isn't ruled out, but:
+- Evolution is expected primarily through mutation guided by stability levels
+- Extension mechanisms remain important but aren't the primary evolution method
+- Restructuring is allowed anytime as long as compatibility requirements are met
+
+## Impact and Benefits
+
+### For Schema Authors
+- **Write once, run forever**: Schemas written today will continue to work with all future versions
+- **Clear stability signals**: Know which features are safe to use in production vs. experimental
+- **Faster access to improvements**: Bug fixes and clarifications available immediately
+
+### For Implementers
+- **Reduced maintenance**: No need to maintain separate code for different semantic versions
+- **Automatic backward compatibility**: Supporting the current release automatically supports all past releases (excluding pre-stability "draft" versions)
+- **Clear implementation requirements**: Stability levels indicate what must be supported
+
+### For the Community
+- **Production-ready perception**: Dropping "draft" label clarifies that JSON Schema is production-ready
+- **Continuous improvement**: Specification can evolve without waiting for major version releases
+- **Real-world validation**: Unstable features can be tested in production before compatibility commitments
+
+## Stability Process
+
+### Feature Lifecycle
+
+1. **Proposed**: Feature is discussed and designed
+2. **Unstable**: Feature is in spec but can change
+   - Requirements: Basic specification text
+   - Can change based on feedback
+   - Clearly marked as unstable
+3. **Stable**: Feature has compatibility guarantees
+   - Requirements: Tests, multiple implementations, documentation, real-world usage
+   - Subject to strict backward/forward compatibility
+   - Typically takes ~2 years from proposal
+
+### Compatibility Requirements
+
+Once a feature is **stable**:
+- **Backward compatible**: New versions must accept all valid schemas from previous versions
+- **Forward compatible**: Behavior must remain consistent - schemas validate the same way
+- **Breaking changes**: Only allowed for critical security issues or spec ambiguities
+
+## Related Decisions
+
+- [Decoupling from IETF](./decouple-from-ietf) - The decision that made this new process necessary
+
+## Further Reading
+
+- [GitHub Discussion #234](https://github.com/orgs/json-schema-org/discussions/234) - TC39-inspired proposal by @jdesrosiers
+- [GitHub Discussion #257](https://github.com/orgs/json-schema-org/discussions/257) - @awwright's vision including core semantics approach
+- [GitHub Discussion #119](https://github.com/json-schema-org/community/discussions/119) - Early forward compatibility discussions
+- [Future of JSON Schema blog post](https://json-schema.org/blog/posts/future-of-json-schema) - User-friendly overview

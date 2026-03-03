@@ -1,0 +1,124 @@
+---
+title: Implementations
+description: JSON Schema implementations across different programming languages and platforms
+---
+
+## Overview
+
+JSON Schema has been implemented in numerous programming languages, providing validation and annotation capabilities for JSON documents across different platforms and ecosystems.
+
+## Finding Implementations
+
+The official JSON Schema website maintains a comprehensive list of implementations:
+
+<Card title="JSON Schema Implementations" icon="globe" href="https://json-schema.org/implementations">
+  Browse implementations by language, draft support, and features
+</Card>
+
+## Implementation Categories
+
+Implementations are available for:
+
+<CardGroup cols={2}>
+  <Card title="Validators" icon="check-circle">
+    Libraries that validate JSON documents against schemas
+  </Card>
+  <Card title="Generators" icon="wand-magic-sparkles">
+    Tools that generate schemas from JSON or code
+  </Card>
+  <Card title="Documentation" icon="book">
+    Systems that generate documentation from schemas
+  </Card>
+  <Card title="UI Generators" icon="window">
+    Tools that create user interfaces from schemas
+  </Card>
+</CardGroup>
+
+## Popular Languages
+
+Implementations are available for most major programming languages:
+
+- **JavaScript/TypeScript**: Multiple implementations for Node.js and browsers
+- **Python**: Several mature validation libraries
+- **Java**: Enterprise-ready implementations
+- **Go**: High-performance validators
+- **C#/.NET**: Full-featured libraries
+- **Ruby**: Well-maintained gems
+- **PHP**: Composer packages
+- **Rust**: Memory-safe implementations
+- **And many more...**
+
+## Choosing an Implementation
+
+When selecting a JSON Schema implementation, consider:
+
+### Draft Support
+
+Ensure the implementation supports the JSON Schema draft version you need:
+
+- Draft 2020-12 (latest)
+- Draft 2019-09
+- Draft-07
+- Draft-06
+- Draft-04 (legacy)
+
+### Features
+
+Different implementations may offer:
+
+- **Validation**: Core schema validation
+- **Annotation**: Collecting annotation results
+- **Custom Keywords**: Support for extending the vocabulary
+- **Format Validation**: Built-in format attribute validation
+- **Remote References**: Loading schemas from URLs
+- **Async Validation**: Non-blocking validation operations
+
+### Quality Indicators
+
+Look for implementations that:
+
+- Pass the [official test suite](/resources/test-suite)
+- Are actively maintained
+- Have good documentation
+- Follow semantic versioning
+- Have an active community
+
+## Contributing to Implementations
+
+Most JSON Schema implementations are open source and welcome contributions:
+
+- Report bugs and issues
+- Submit pull requests
+- Improve documentation
+- Add test coverage
+- Support new draft features
+
+## Creating an Implementation
+
+If you're building a new JSON Schema implementation:
+
+<Steps>
+  <Step title="Study the Specification">
+    Read the [JSON Schema specification](http://json-schema.org/specification.html) thoroughly
+  </Step>
+  <Step title="Use the Test Suite">
+    Implement against the [official test suite](/resources/test-suite) from the start
+  </Step>
+  <Step title="Follow Best Practices">
+    Handle edge cases, provide clear error messages, and optimize performance
+  </Step>
+  <Step title="List Your Implementation">
+    Add your implementation to the official [JSON Schema website](https://json-schema.org)
+  </Step>
+</Steps>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="Test Suite" icon="flask" href="/resources/test-suite">
+    Validate your implementation with conformance tests
+  </Card>
+  <Card title="Tools" icon="wrench" href="/resources/tools">
+    Discover tools and utilities for working with JSON Schema
+  </Card>
+</CardGroup>

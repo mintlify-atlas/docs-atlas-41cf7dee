@@ -1,122 +1,161 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "JSON Schema",
+  "theme": "sequoia",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#5B4EE0",
+    "light": "#7B6EF6",
+    "dark": "#3D2FBF"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/json-schema-org/json-schema-spec"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/json-schema-org/json-schema-spec",
+      "website": "https://json-schema.org"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Overview",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "what-is-json-schema",
+              "getting-started"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Specification",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "specification/core/overview",
+              "specification/core/definitions",
+              "specification/core/keywords",
+              "specification/core/schemas",
+              "specification/core/fragment-identifiers",
+              "specification/core/versioning"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Validation Specification",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "specification/validation/overview",
+              "specification/validation/structural-validation",
+              "specification/validation/format",
+              "specification/validation/content",
+              "specification/validation/annotations"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Advanced Concepts",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "concepts/keyword-behaviors",
+              "concepts/subschemas",
+              "concepts/unevaluated",
+              "concepts/output-formatting",
+              "concepts/vocabularies"
+            ]
+          },
+          {
+            "group": "Development Process",
+            "pages": [
+              "process/overview",
+              "process/feature-lifecycle",
+              "process/proposals",
+              "process/contributing"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Core Keywords",
             "pages": [
-              "api-reference/introduction"
+              "reference/core/schema",
+              "reference/core/vocabulary",
+              "reference/core/id",
+              "reference/core/ref",
+              "reference/core/defs",
+              "reference/core/comment"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Applicator Keywords",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "reference/applicator/allof",
+              "reference/applicator/anyof",
+              "reference/applicator/oneof",
+              "reference/applicator/not",
+              "reference/applicator/if-then-else",
+              "reference/applicator/properties",
+              "reference/applicator/items",
+              "reference/applicator/contains"
+            ]
+          },
+          {
+            "group": "Validation Keywords",
+            "pages": [
+              "reference/validation/type",
+              "reference/validation/enum",
+              "reference/validation/const",
+              "reference/validation/string",
+              "reference/validation/numeric",
+              "reference/validation/array",
+              "reference/validation/object"
+            ]
+          },
+          {
+            "group": "Meta-Data",
+            "pages": [
+              "reference/metadata/title",
+              "reference/metadata/description",
+              "reference/metadata/examples",
+              "reference/metadata/default",
+              "reference/metadata/deprecated",
+              "reference/metadata/readonly-writeonly"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Community",
+        "groups": [
+          {
+            "group": "Get Involved",
+            "pages": [
+              "community/overview",
+              "community/contributing",
+              "community/code-of-conduct",
+              "community/support"
+            ]
+          },
+          {
+            "group": "Architecture Decisions",
+            "pages": [
+              "adr/overview",
+              "adr/stable-spec",
+              "adr/decouple-from-ietf"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/test-suite",
+              "resources/implementations",
+              "resources/tools"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

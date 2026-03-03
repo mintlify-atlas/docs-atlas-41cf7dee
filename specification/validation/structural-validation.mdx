@@ -1,0 +1,436 @@
+---
+title: "Structural Validation Keywords"
+description: "Complete reference for JSON Schema structural validation keywords including type, numeric, string, array, and object validators"
+---
+
+## Overview
+
+Validation keywords in a schema impose requirements for successful validation of an instance. These keywords are all assertions without any annotation behavior.
+
+## Any Instance Type
+
+These keywords apply to instances of any type.
+
+### `type`
+
+The `type` keyword validates that an instance matches one of the specified JSON types.
+
+**Value**: String or array of strings
+
+**Valid type values**:
+- `"null"` - JSON null
+- `"boolean"` - JSON boolean
+- `"object"` - JSON object
+- `"array"` - JSON array
+- `"number"` - JSON number (including integers and floats)
+- `"string"` - JSON string
+- `"integer"` - Any number with a zero fractional part
+
+<CodeGroup>
+```json Single Type
+{
+  "type": "string"
+}
+```
+
+```json Multiple Types
+{
+  "type": ["string", "number"]
+}
+```
+</CodeGroup>
+
+<Info>
+If `type` is an array, the instance validates if its type matches **any** of the types in the array.
+</Info>
+
+### `enum`
+
+The `enum` keyword validates that an instance value equals one of the specified values.
+
+**Value**: Array (should have at least one element; elements should be unique)
+
+```json
+{
+  "enum": ["red", "green", "blue", null, 42]
+}
+```
+
+<Note>
+Elements in the array can be of any type, including `null`. The instance must be **exactly equal** to one of the enum values.
+</Note>
+
+### `const`
+
+The `const` keyword validates that an instance value equals a specific constant value.
+
+**Value**: Any JSON value, including null
+
+```json
+{
+  "const": "active"
+}
+```
+
+This is functionally equivalent to an `enum` with a single value.
+
+## Numeric Instances
+
+These keywords apply to instances of type `number` or `integer`.
+
+### `multipleOf`
+
+Validates that a number is a multiple of the specified value.
+
+**Value**: Number (must be strictly greater than 0)
+
+```json
+{
+  "type": "number",
+  "multipleOf": 0.5
+}
+```
+
+A numeric instance is valid only if division by this keyword's value results in an integer.
+
+<Accordion title="Examples">
+- Value `10` with `multipleOf: 5` → Valid (10 / 5 = 2)
+- Value `7` with `multipleOf: 3` → Invalid (7 / 3 = 2.333...)
+- Value `1.5` with `multipleOf: 0.5` → Valid (1.5 / 0.5 = 3)
+</Accordion>
+
+### `maximum`
+
+Validates that a number is less than or equal to the specified maximum.
+
+**Value**: Number
+
+```json
+{
+  "type": "number",
+  "maximum": 100
+}
+```
+
+The instance validates if it is **less than or exactly equal** to `maximum`.
+
+### `exclusiveMaximum`
+
+Validates that a number is strictly less than the specified maximum.
+
+**Value**: Number
+
+```json
+{
+  "type": "number",
+  "exclusiveMaximum": 100
+}
+```
+
+The instance validates if it is **strictly less than** (not equal to) `exclusiveMaximum`.
+
+### `minimum`
+
+Validates that a number is greater than or equal to the specified minimum.
+
+**Value**: Number
+
+```json
+{
+  "type": "number",
+  "minimum": 0
+}
+```
+
+The instance validates if it is **greater than or exactly equal** to `minimum`.
+
+### `exclusiveMinimum`
+
+Validates that a number is strictly greater than the specified minimum.
+
+**Value**: Number
+
+```json
+{
+  "type": "number",
+  "exclusiveMinimum": 0
+}
+```
+
+The instance validates if it is **strictly greater than** (not equal to) `exclusiveMinimum`.
+
+<CodeGroup>
+```json Range Example (Inclusive)
+{
+  "type": "number",
+  "minimum": 0,
+  "maximum": 100
+}
+```
+
+```json Range Example (Exclusive)
+{
+  "type": "number",
+  "exclusiveMinimum": 0,
+  "exclusiveMaximum": 100
+}
+```
+</CodeGroup>
+
+## String Instances
+
+These keywords apply to instances of type `string`.
+
+### `maxLength`
+
+Validates that a string's length is less than or equal to the specified value.
+
+**Value**: Non-negative integer
+
+```json
+{
+  "type": "string",
+  "maxLength": 50
+}
+```
+
+<Info>
+The length of a string is defined as the number of Unicode code points, not bytes or grapheme clusters.
+</Info>
+
+### `minLength`
+
+Validates that a string's length is greater than or equal to the specified value.
+
+**Value**: Non-negative integer
+
+```json
+{
+  "type": "string",
+  "minLength": 1
+}
+```
+
+Omitting this keyword has the same behavior as a value of `0`.
+
+### `pattern`
+
+Validates that a string matches a regular expression.
+
+**Value**: String (should be a valid regular expression)
+
+```json
+{
+  "type": "string",
+  "pattern": "^[A-Z][a-z]+$"
+}
+```
+
+<Warning>
+Regular expressions are **not implicitly anchored**. Use `^` and `$` to anchor the pattern to the start and end of the string.
+</Warning>
+
+<CodeGroup>
+```json Email Pattern
+{
+  "type": "string",
+  "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+}
+```
+
+```json Phone Number Pattern
+{
+  "type": "string",
+  "pattern": "^\\+?[1-9]\\d{1,14}$"
+}
+```
+</CodeGroup>
+
+## Array Instances
+
+These keywords apply to instances of type `array`.
+
+### `maxItems`
+
+Validates that an array's size is less than or equal to the specified value.
+
+**Value**: Non-negative integer
+
+```json
+{
+  "type": "array",
+  "maxItems": 10
+}
+```
+
+### `minItems`
+
+Validates that an array's size is greater than or equal to the specified value.
+
+**Value**: Non-negative integer
+
+```json
+{
+  "type": "array",
+  "minItems": 1
+}
+```
+
+Omitting this keyword has the same behavior as a value of `0`.
+
+### `uniqueItems`
+
+Validates that all elements in an array are unique.
+
+**Value**: Boolean
+
+```json
+{
+  "type": "array",
+  "uniqueItems": true
+}
+```
+
+- If `true`: All array elements must be unique
+- If `false` (or omitted): Duplicate elements are allowed
+
+<CodeGroup>
+```json Valid Array
+[1, 2, 3, 4, 5]
+```
+
+```json Invalid Array (with uniqueItems: true)
+[1, 2, 3, 2, 5]
+```
+</CodeGroup>
+
+## Object Instances
+
+These keywords apply to instances of type `object`.
+
+### `maxProperties`
+
+Validates that an object's number of properties is less than or equal to the specified value.
+
+**Value**: Non-negative integer
+
+```json
+{
+  "type": "object",
+  "maxProperties": 10
+}
+```
+
+### `minProperties`
+
+Validates that an object's number of properties is greater than or equal to the specified value.
+
+**Value**: Non-negative integer
+
+```json
+{
+  "type": "object",
+  "minProperties": 1
+}
+```
+
+Omitting this keyword has the same behavior as a value of `0`.
+
+### `required`
+
+Validates that an object contains all specified properties.
+
+**Value**: Array of strings (elements must be unique)
+
+```json
+{
+  "type": "object",
+  "required": ["name", "email"]
+}
+```
+
+An object validates if every item in the `required` array is the name of a property in the instance.
+
+### `dependentRequired`
+
+Specifies properties that are required if another specific property is present.
+
+**Value**: Object where values are arrays of strings
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "creditCard": { "type": "string" },
+    "billingAddress": { "type": "string" }
+  },
+  "dependentRequired": {
+    "creditCard": ["billingAddress"]
+  }
+}
+```
+
+In this example, if `creditCard` is present, then `billingAddress` must also be present.
+
+<Accordion title="More Examples">
+```json Conditional Requirements
+{
+  "type": "object",
+  "properties": {
+    "hasLicense": { "type": "boolean" },
+    "licenseNumber": { "type": "string" },
+    "licenseExpiry": { "type": "string" }
+  },
+  "dependentRequired": {
+    "licenseNumber": ["hasLicense"],
+    "licenseExpiry": ["hasLicense", "licenseNumber"]
+  }
+}
+```
+</Accordion>
+
+## Complete Example
+
+Here's a comprehensive example combining multiple validation keywords:
+
+```json
+{
+  "type": "object",
+  "required": ["username", "email", "age"],
+  "properties": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 20,
+      "pattern": "^[a-zA-Z0-9_]+$"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 150
+    },
+    "tags": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": ["active", "inactive", "pending"]
+    }
+  },
+  "maxProperties": 10
+}
+```
+
+## Related Topics
+
+- [Format Validation](/specification/validation/format) - Semantic format validation
+- [Annotation Keywords](/specification/validation/annotations) - Meta-data keywords

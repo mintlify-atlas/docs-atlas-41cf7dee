@@ -1,0 +1,381 @@
+---
+title: deprecated
+description: Mark schema properties as deprecated to indicate they may be removed in future versions
+---
+
+The `deprecated` keyword indicates that applications should refrain from using the declared property or schema. It signals that a feature may be removed in future versions.
+
+## Syntax
+
+The value of `deprecated` must be a boolean.
+
+```json
+{
+  "deprecated": true
+}
+```
+
+## Purpose
+
+The `deprecated` keyword is a metadata annotation that:
+
+- Marks properties or schemas as deprecated
+- Signals that a feature may be removed in future versions
+- Helps developers migrate away from outdated fields
+- Can be used by tools to warn about deprecated usage
+- Has no effect on validation (it is purely informational)
+
+When multiple occurrences of this keyword are applicable to a single sub-instance, applications should consider the instance location to be deprecated if any occurrence specifies a `true` value.
+
+## Behavior
+
+### Property Deprecation
+
+The `deprecated` keyword applies to each instance location to which the schema object containing the keyword successfully applies. This can result in scenarios where every array item or object property is deprecated even though the containing array or object is not.
+
+### Root Schema Deprecation
+
+A root schema containing `deprecated` with a value of `true` indicates that the entire resource being described may be removed in the future.
+
+### Default Behavior
+
+Omitting this keyword has the same behavior as a value of `false`.
+
+## Examples
+
+### Deprecated Property
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "username": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Username field is deprecated. Use email for authentication instead."
+    }
+  }
+}
+```
+
+The `username` property is marked as deprecated, signaling that developers should use `email` instead.
+
+### Migration Path Documentation
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "fullName": {
+      "type": "string",
+      "deprecated": true,
+      "description": "DEPRECATED: Use firstName and lastName instead. This field will be removed in v3.0."
+    }
+  }
+}
+```
+
+Clear migration instructions help developers update their code.
+
+### API Versioning
+
+```json
+{
+  "type": "object",
+  "title": "User API Response",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "profile_image": {
+      "type": "string",
+      "format": "uri",
+      "deprecated": true,
+      "description": "Deprecated. Use profileImageUrl instead."
+    },
+    "profileImageUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to user's profile image"
+    }
+  }
+}
+```
+
+API evolution using deprecation to guide users to new field names.
+
+### Multiple Deprecated Fields
+
+```json
+{
+  "type": "object",
+  "title": "Product",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number"
+    },
+    "cost": {
+      "type": "number",
+      "deprecated": true,
+      "description": "Deprecated: Internal cost information will no longer be exposed in API v2."
+    },
+    "vendor_id": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Deprecated: Use vendorId (camelCase) instead."
+    },
+    "vendorId": {
+      "type": "string"
+    }
+  }
+}
+```
+
+Multiple deprecated fields during a transition period.
+
+### Deprecated Enum Value (Pattern)
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["active", "inactive", "pending", "suspended"],
+      "description": "Account status. Note: 'suspended' is deprecated and will be removed in the next major version."
+    }
+  }
+}
+```
+
+While you cannot deprecate individual enum values directly, you can document it in the description.
+
+### Deprecated Configuration Option
+
+```json
+{
+  "type": "object",
+  "title": "Server Configuration",
+  "properties": {
+    "port": {
+      "type": "integer",
+      "default": 3000
+    },
+    "enableHttp": {
+      "type": "boolean",
+      "deprecated": true,
+      "description": "Deprecated: HTTP support is being removed. Use HTTPS only.",
+      "default": false
+    },
+    "enableHttps": {
+      "type": "boolean",
+      "description": "Enable HTTPS server",
+      "default": true
+    }
+  }
+}
+```
+
+Configuration options deprecated for security reasons.
+
+### Deprecated with Timeline
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "apiKey": {
+      "type": "string",
+      "deprecated": true,
+      "description": "DEPRECATED (as of v2.0, removed in v4.0): Use OAuth 2.0 authentication instead. See migration guide: https://api.example.com/docs/auth-migration"
+    },
+    "accessToken": {
+      "type": "string",
+      "description": "OAuth 2.0 access token"
+    }
+  }
+}
+```
+
+Deprecation notice with version timeline and migration documentation link.
+
+### Entire Schema Deprecated
+
+```json
+{
+  "type": "object",
+  "title": "Legacy User Object",
+  "deprecated": true,
+  "description": "This entire schema is deprecated. Use the User v2 schema instead.",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    }
+  }
+}
+```
+
+Marking an entire schema as deprecated when replacing it with a new version.
+
+### Array Items Deprecated
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "roles": {
+      "type": "array",
+      "description": "User roles. The 'super_admin' role is deprecated.",
+      "items": {
+        "type": "string",
+        "enum": ["user", "admin", "moderator", "super_admin"]
+      }
+    }
+  }
+}
+```
+
+Deprecating specific array values through documentation.
+
+### Conditional Deprecation Documentation
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "paymentMethod": {
+      "type": "string",
+      "enum": ["credit_card", "paypal", "bank_transfer", "bitcoin"],
+      "description": "Payment method. Note: 'bitcoin' payment method is deprecated for new transactions as of January 2024."
+    }
+  }
+}
+```
+
+Documenting conditional or partial deprecation.
+
+### Replacement Field Indicated
+
+```json
+{
+  "type": "object",
+  "title": "Event",
+  "properties": {
+    "timestamp": {
+      "type": "integer",
+      "description": "Unix timestamp",
+      "deprecated": true,
+      "description": "Deprecated: Use eventTime (ISO 8601 format) for better timezone support."
+    },
+    "eventTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp in ISO 8601 format"
+    }
+  }
+}
+```
+
+Clear indication of the replacement field improves developer experience.
+
+## Best Practices
+
+### Provide Clear Migration Instructions
+
+Always explain what developers should use instead:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "phone": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Deprecated: Use phoneNumber field which supports international format."
+    },
+    "phoneNumber": {
+      "type": "string",
+      "description": "Phone number in E.164 format"
+    }
+  }
+}
+```
+
+### Include Version Information
+
+Specify when the field was deprecated and when it will be removed:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "oldField": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Deprecated in v2.1.0, will be removed in v3.0.0. Use newField instead."
+    },
+    "newField": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### Link to Documentation
+
+Provide links to migration guides:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "legacyAuth": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Deprecated: See https://docs.example.com/migration/auth for migration guide."
+    }
+  }
+}
+```
+
+### Keep Deprecated Fields Functional
+
+Deprecated fields should continue to work during the deprecation period:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "oldFormat": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Still supported but deprecated. Will be removed in v4.0."
+    },
+    "newFormat": {
+      "type": "string"
+    }
+  }
+}
+```

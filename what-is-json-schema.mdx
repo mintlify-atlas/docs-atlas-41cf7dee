@@ -1,0 +1,306 @@
+---
+title: What is JSON Schema?
+description: Understand the fundamentals of JSON Schema, including instances, schemas, keywords, and how validation works.
+---
+
+# What is JSON Schema?
+
+JSON Schema is a vocabulary that allows you to validate, annotate, and manipulate JSON documents. It defines a declarative language for creating schemas that describe the structure, constraints, and metadata associated with JSON data.
+
+## Core Terminology
+
+### Instance
+
+A JSON document to which a schema is applied is known as a **JSON instance** or just an **instance**. An instance can be any valid JSON value as defined by RFC 8259:
+
+- `null` - A JSON null value
+- `boolean` - A true or false value
+- `object` - An unordered set of properties mapping strings to instances
+- `array` - An ordered list of instances  
+- `number` - An arbitrary-precision, base-10 decimal number value
+- `string` - A string of Unicode code points
+
+<Note>
+JSON Schema is programming language agnostic and supports the full range of JSON values. However, some languages may not be able to represent the full range of values describable by JSON.
+</Note>
+
+### Schema
+
+A **JSON Schema document** (or simply a schema) is used to describe an instance. A schema can itself be interpreted as an instance, since it is also valid JSON.
+
+**A JSON Schema MUST be an object or a boolean.**
+
+#### Schema Objects and Keywords
+
+Object properties that are applied to the instance are called **keywords** or **schema keywords**. Keywords fall into several categories:
+
+- **Identifiers** - Control schema identification through setting an IRI for the schema (e.g., `$id`, `$schema`)
+- **Assertions** - Produce a boolean result when applied to an instance (e.g., `type`, `minimum`, `required`)
+- **Annotations** - Attach information to an instance for application use (e.g., `title`, `description`, `default`)
+- **Applicators** - Apply one or more subschemas to parts of the instance (e.g., `properties`, `items`, `allOf`)
+- **Reserved locations** - Reserve a place for a specific purpose like reusable schemas (e.g., `$defs`)
+
+#### Boolean Schemas
+
+The boolean schema values `true` and `false` are trivial schemas that always produce themselves as assertion results:
+
+- `true` - Always passes validation (equivalent to an empty schema `{}`)
+- `false` - Always fails validation (equivalent to `{"not": {}}`)
+
+<CodeGroup>
+```json Always Pass
+true
+```
+
+```json Always Fail
+false
+```
+</CodeGroup>
+
+## How Validation Works
+
+A JSON Schema represents a set of constraints and annotations that are applied to a JSON value. An instance is considered **valid** against a schema if it satisfies the constraint defined by every keyword in that schema.
+
+<Note>
+Schema evaluation is a recursive process. Some keywords contain subschemas that can be used to create complex constraints or describe compound values like arrays and objects.
+</Note>
+
+### Example: Object Validation
+
+To describe a JSON object, a schema uses:
+- The `type` keyword to declare that the value MUST be an object
+- The `properties` keyword to apply separate schemas to each property
+- The `required` keyword to specify mandatory properties
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer", "minimum": 0 }
+  },
+  "required": ["name"]
+}
+```
+
+This schema validates objects that:
+- Must have a `name` property (string)
+- May have an `age` property (non-negative integer)
+- Can have additional properties
+
+## Primary Use Cases
+
+### 1. API Validation
+
+Validate request and response payloads in REST APIs to ensure data integrity:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string", "format": "uuid" },
+    "email": { "type": "string", "format": "email" },
+    "createdAt": { "type": "string", "format": "date-time" }
+  },
+  "required": ["userId", "email"]
+}
+```
+
+### 2. Configuration Files
+
+Define and validate application configuration structures:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "database": {
+      "type": "object",
+      "properties": {
+        "host": { "type": "string" },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      },
+      "required": ["host", "port"]
+    }
+  }
+}
+```
+
+### 3. Documentation Generation
+
+Use annotations to generate human-readable documentation:
+
+```json
+{
+  "title": "Product",
+  "description": "A product in the catalog",
+  "type": "object",
+  "properties": {
+    "productId": {
+      "type": "string",
+      "description": "Unique identifier for the product"
+    },
+    "price": {
+      "type": "number",
+      "description": "Product price in USD",
+      "minimum": 0
+    }
+  }
+}
+```
+
+### 4. Form Generation
+
+Annotations can drive UI form builders:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string",
+      "title": "Username",
+      "minLength": 3,
+      "maxLength": 20
+    },
+    "newsletter": {
+      "type": "boolean",
+      "title": "Subscribe to newsletter",
+      "default": false
+    }
+  }
+}
+```
+
+## Instance Equality
+
+Two JSON instances are equal if and only if they are of the same type and have the same value according to the data model:
+
+- Both are null; or
+- Both are true; or  
+- Both are false; or
+- Both are strings, and are the same codepoint-for-codepoint; or
+- Both are numbers, and have the same mathematical value; or
+- Both are arrays, and have an equal value item-for-item; or
+- Both are objects, and each property in one has exactly one property with a key equal to the other's, and that property has an equal value
+
+<Warning>
+Mere formatting differences (indentation, placement of commas, trailing zeros) are insignificant. The value `1.0` equals `1`, and object property order doesn't matter.
+</Warning>
+
+## Keyword Behaviors
+
+JSON Schema keywords exhibit one or more behaviors:
+
+### Assertions
+
+Assertions produce a boolean result when evaluating an instance:
+
+```json
+{
+  "type": "string",
+  "minLength": 5,
+  "maxLength": 100
+}
+```
+
+An instance passes if ALL assertion keywords produce `true`.
+
+### Annotations  
+
+Annotations attach information to instance locations:
+
+```json
+{
+  "title": "User Profile",
+  "description": "Represents a user in the system",
+  "default": { "role": "user" }
+}
+```
+
+Annotations are collected and made available to applications but don't affect validation results.
+
+### Applicators
+
+Applicators apply subschemas to parts of the instance:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
+```
+
+The `properties` and `items` keywords are applicators that apply subschemas to object properties and array items respectively.
+
+## Assertion and Instance Types
+
+<Note>
+Most assertions only constrain values within a certain primitive type. When the instance type doesn't match the keyword's target type, the instance is considered valid against that assertion.
+</Note>
+
+For example, the `maxLength` keyword only restricts strings. If the instance is a number, boolean, null, array, or object, it's valid against this assertion:
+
+```json
+{
+  "type": ["string", "null"],
+  "maxLength": 255
+}
+```
+
+This schema allows either:
+- A string with at most 255 characters
+- A null value
+
+If `maxLength` also restricted the instance type to be a string, this would be much more cumbersome to express.
+
+## Meta-Schemas
+
+A **meta-schema** is a schema that describes a schema. Meta-schemas validate JSON Schemas and specify the set of keywords those schemas can use.
+
+Every schema has a meta-schema, declared using the `$schema` keyword:
+
+```json
+{
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object"
+}
+```
+
+<Warning>
+Implementations MUST determine the dialect using the `$schema` keyword, parent schema dialect, external context, or user configuration. If the dialect cannot be determined, implementations MUST refuse to process the schema.
+</Warning>
+
+## Schema Resources and Identification
+
+A **JSON Schema resource** is a schema canonically identified by an absolute IRI (without fragments). The `$id` keyword is used to identify schemas:
+
+```json
+{
+  "$id": "https://example.com/schemas/product.json",
+  "$schema": "https://json-schema.org/v1/2026",
+  "type": "object",
+  "properties": {
+    "productId": { "type": "string" }
+  }
+}
+```
+
+<Note>
+The `$id` IRI is an identifier and not necessarily a network locator. A schema need not be downloadable from its canonical IRI.
+</Note>
+
+## Next Steps
+
+Now that you understand the fundamentals, try creating your first schema:
+
+<Card title="Getting Started" icon="rocket" href="/getting-started">
+  Write a simple schema and validate JSON data against it
+</Card>

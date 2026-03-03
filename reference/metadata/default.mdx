@@ -1,0 +1,410 @@
+---
+title: default
+description: Supply a default JSON value associated with a schema for use when no value is provided
+---
+
+The `default` keyword specifies a default JSON value that can be used when an instance value is not provided. It is commonly used in configuration schemas, form generation, and API documentation.
+
+## Syntax
+
+The value of `default` can be of any type, including null. There are no restrictions on the value.
+
+```json
+{
+  "default": <any JSON value>
+}
+```
+
+## Purpose
+
+The `default` keyword is a metadata annotation that:
+
+- Supplies a default value when no value is provided
+- Helps tools generate forms with pre-filled values
+- Documents the recommended or typical value for a field
+- Can be used by implementations to fill in missing values
+- Has no effect on validation (it is purely informational)
+- Should be a valid value against the associated schema (recommended)
+
+## Behavior
+
+When multiple occurrences of the `default` keyword are applicable to a single sub-instance, implementations should remove duplicates.
+
+Implementations may use the `default` value as an additional example for documentation purposes.
+
+## Examples
+
+### Basic Default Values
+
+```json
+{
+  "type": "integer",
+  "title": "Port",
+  "description": "Server port number",
+  "default": 8080,
+  "minimum": 1,
+  "maximum": 65535
+}
+```
+
+The default port is 8080, which will be used if no port is specified.
+
+### String Default
+
+```json
+{
+  "type": "string",
+  "title": "Environment",
+  "enum": ["development", "staging", "production"],
+  "default": "development"
+}
+```
+
+Defaults to "development" environment when not specified.
+
+### Boolean Default
+
+```json
+{
+  "type": "boolean",
+  "title": "Enable Logging",
+  "description": "Enable detailed application logging",
+  "default": true
+}
+```
+
+Logging is enabled by default.
+
+### Object with Default Values
+
+```json
+{
+  "type": "object",
+  "title": "Database Configuration",
+  "properties": {
+    "host": {
+      "type": "string",
+      "default": "localhost"
+    },
+    "port": {
+      "type": "integer",
+      "default": 5432
+    },
+    "database": {
+      "type": "string",
+      "default": "myapp"
+    },
+    "ssl": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}
+```
+
+Each property has its own default value, providing a complete default configuration.
+
+### Array Default
+
+```json
+{
+  "type": "array",
+  "title": "Allowed Origins",
+  "description": "CORS allowed origins",
+  "items": {
+    "type": "string"
+  },
+  "default": ["http://localhost:3000"]
+}
+```
+
+Defaults to allowing localhost origin.
+
+### Null Default
+
+```json
+{
+  "type": ["string", "null"],
+  "title": "Middle Name",
+  "description": "User's middle name (optional)",
+  "default": null
+}
+```
+
+Defaults to null when no middle name is provided.
+
+### Configuration Schema
+
+```json
+{
+  "type": "object",
+  "title": "Application Settings",
+  "properties": {
+    "server": {
+      "type": "object",
+      "properties": {
+        "port": {
+          "type": "integer",
+          "default": 3000
+        },
+        "host": {
+          "type": "string",
+          "default": "0.0.0.0"
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["json", "text"],
+          "default": "json"
+        }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "ttl": {
+          "type": "integer",
+          "description": "Cache time-to-live in seconds",
+          "default": 3600
+        }
+      }
+    }
+  }
+}
+```
+
+A complete configuration schema with sensible defaults for all settings.
+
+### Pagination Parameters
+
+```json
+{
+  "type": "object",
+  "title": "Pagination Options",
+  "properties": {
+    "page": {
+      "type": "integer",
+      "description": "Page number to retrieve",
+      "minimum": 1,
+      "default": 1
+    },
+    "pageSize": {
+      "type": "integer",
+      "description": "Number of items per page",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 20
+    },
+    "sortBy": {
+      "type": "string",
+      "description": "Field to sort by",
+      "default": "createdAt"
+    },
+    "sortOrder": {
+      "type": "string",
+      "enum": ["asc", "desc"],
+      "default": "desc"
+    }
+  }
+}
+```
+
+API pagination with sensible defaults for common use cases.
+
+### Theme Configuration
+
+```json
+{
+  "type": "object",
+  "title": "Theme Settings",
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "primaryColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "default": "#007bff"
+    },
+    "fontSize": {
+      "type": "string",
+      "enum": ["small", "medium", "large"],
+      "default": "medium"
+    },
+    "borderRadius": {
+      "type": "integer",
+      "description": "Border radius in pixels",
+      "minimum": 0,
+      "default": 4
+    }
+  }
+}
+```
+
+UI theme settings with reasonable defaults.
+
+### Feature Flags
+
+```json
+{
+  "type": "object",
+  "title": "Feature Flags",
+  "properties": {
+    "enableBetaFeatures": {
+      "type": "boolean",
+      "description": "Enable experimental beta features",
+      "default": false
+    },
+    "enableAnalytics": {
+      "type": "boolean",
+      "description": "Enable usage analytics tracking",
+      "default": true
+    },
+    "enableNotifications": {
+      "type": "boolean",
+      "description": "Enable push notifications",
+      "default": true
+    },
+    "maxUploadSize": {
+      "type": "integer",
+      "description": "Maximum file upload size in MB",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 10
+    }
+  }
+}
+```
+
+Feature flags with safe defaults.
+
+### Retry Configuration
+
+```json
+{
+  "type": "object",
+  "title": "Retry Policy",
+  "properties": {
+    "maxRetries": {
+      "type": "integer",
+      "description": "Maximum number of retry attempts",
+      "minimum": 0,
+      "maximum": 10,
+      "default": 3
+    },
+    "initialDelay": {
+      "type": "integer",
+      "description": "Initial delay in milliseconds",
+      "minimum": 100,
+      "default": 1000
+    },
+    "maxDelay": {
+      "type": "integer",
+      "description": "Maximum delay in milliseconds",
+      "minimum": 1000,
+      "default": 30000
+    },
+    "backoffMultiplier": {
+      "type": "number",
+      "description": "Exponential backoff multiplier",
+      "minimum": 1,
+      "default": 2
+    }
+  }
+}
+```
+
+Retry policy with standard exponential backoff defaults.
+
+### Search Options
+
+```json
+{
+  "type": "object",
+  "title": "Search Parameters",
+  "properties": {
+    "query": {
+      "type": "string",
+      "description": "Search query string"
+    },
+    "caseSensitive": {
+      "type": "boolean",
+      "default": false
+    },
+    "matchWholeWord": {
+      "type": "boolean",
+      "default": false
+    },
+    "includeArchived": {
+      "type": "boolean",
+      "default": false
+    },
+    "maxResults": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1000,
+      "default": 100
+    }
+  },
+  "required": ["query"]
+}
+```
+
+Search configuration with user-friendly defaults.
+
+## Best Practices
+
+### Use Valid Defaults
+
+Ensure default values validate against the schema:
+
+```json
+{
+  "type": "integer",
+  "minimum": 1,
+  "maximum": 100,
+  "default": 10
+}
+```
+
+### Choose Safe Defaults
+
+Select defaults that are safe for production use:
+
+```json
+{
+  "type": "boolean",
+  "title": "Debug Mode",
+  "description": "Enable debug mode (should be false in production)",
+  "default": false
+}
+```
+
+### Document Default Behavior
+
+Combine `default` with `description` to explain the default choice:
+
+```json
+{
+  "type": "integer",
+  "title": "Connection Timeout",
+  "description": "Connection timeout in milliseconds. Default is 30 seconds, which is suitable for most network conditions.",
+  "minimum": 1000,
+  "default": 30000
+}
+```

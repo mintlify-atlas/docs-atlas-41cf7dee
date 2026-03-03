@@ -1,0 +1,172 @@
+---
+title: Contributing
+description: Guidelines for contributing to the JSON Schema specification project
+---
+
+# Contributing to JSON Schema
+
+Thanks for taking the time to contribute! The JSON Schema project welcomes contributions from the community.
+
+## Types of Contributions
+
+### Editorial Contributions
+
+Contributions that do not change the interpretation of the spec but instead improve legibility are encouraged and often merged by a spec editor with little process:
+
+- Fix editorial errors (spelling, grammar, formatting)
+- Clear up ambiguity in wording
+- Improve examples
+- Enhance documentation
+
+These contributions can typically be submitted as pull requests and will be reviewed quickly.
+
+### Substantive Changes
+
+Contributions that meaningfully change the interpretation of the specification must follow the [Specification Development Process](https://github.com/json-schema-org/json-schema-spec/blob/main/PROCESS.md).
+
+This includes:
+- New features or keywords
+- Changes to validation behavior
+- Breaking changes to existing functionality
+
+## How to Contribute
+
+### Issues
+
+Issues should identify a problem, enhancement, or use case, and propose a course of action for the draft.
+
+**Before creating an issue:**
+- Search existing issues to avoid duplicates
+- Check if your question is better suited for a [support channel](/community/support)
+
+**When creating an issue:**
+- Clearly describe the problem or enhancement
+- Provide use cases and examples
+- Suggest potential solutions or approaches
+- Reference related issues or discussions
+
+### Pull Requests
+
+We welcome pull requests for both editorial suggestions and to resolve open issues.
+
+**Guidelines:**
+
+1. **Reference related issues**: If the pull request would solve a particular issue, reference it in the PR description
+
+2. **Target the correct branch**:
+   - Most PRs should target the `main` branch
+   - During patch phases, target the patch branch (e.g., `2020-12-patch`)
+
+3. **Changes affecting implementation behavior**: Should typically be opened as an issue first to gather consensus
+
+4. **Minimum review period**: Most PRs, including all PRs that impact implementation behavior, will be left open for a minimum of 14 days
+
+5. **Minor fixes**: Wording fixes may be merged more quickly once approved by a project member
+
+**Pull Request Template:**
+
+When submitting a PR, include:
+- What kind of change (bugfix, feature, refactoring, etc.)
+- Issue references (Closes #___ or Related to #___)
+- Summary explaining the motivation and what problem it solves
+- Whether it introduces breaking changes
+
+## Development Process
+
+### Milestones
+
+Each milestone represents an estimation of work for the next draft:
+
+- Milestones are typically named after the meta-schema draft number
+- The open milestone with the lowest draft number is the current active project
+- Issues may be moved between milestones or deferred to future drafts
+- The `draft-future` milestone is for agreed-upon issues without a specific timeline
+
+### Feature Life Cycle
+
+New features progress through these stages:
+
+1. **Concept**: Initial idea discussed in a GitHub issue
+2. **Proposal**: Formal proposal document created
+3. **Experimentation**: Implementations begin supporting the feature
+4. **Stable**: Feature incorporated into the specification
+5. **Deprecated**: Feature marked for future removal
+6. **Removed**: Feature removed (breaking change)
+
+At least two Core Team members must implement prototypes before a concept advances to proposal.
+
+## Building the Specification
+
+### Prerequisites
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+### Build Commands
+
+**Build all specs to HTML:**
+```bash
+npm run build -- specs
+```
+
+**Build individual spec:**
+```bash
+npm run build -- specs/jsonschema-core.md
+```
+
+**Build multiple specs with wildcards:**
+```bash
+npm run build -- specs/jsonschema-*.md
+```
+
+HTML files will be available in the `web` folder.
+
+**Build IETF Internet-Drafts:**
+```bash
+npm run build-ietf
+```
+
+## Release Schedule
+
+The JSON Schema specification aims to publish annually on or about January 1st each year. Releases are identified by the year they are published.
+
+- **Breaking changes** begin a new version (incrementing from version 1)
+- **Compatible changes** maintain the same version
+- Stability is prioritized; breaking changes are avoided when possible
+
+## Communication Channels
+
+### Slack
+
+Join the `#specification` channel in our [Slack workspace](https://json-schema.org/slack) to:
+- Interact with other community members
+- Discuss specification development
+- Share new ideas
+- Ask questions
+
+### GitHub
+
+- **Discussions**: Use GitHub issues for formal proposals and discussions
+- **Pull Requests**: Submit changes through PRs following the guidelines above
+
+## Code of Conduct
+
+All contributors must follow our [Code of Conduct](/community/code-of-conduct). We are committed to providing a welcoming and harassment-free experience for everyone.
+
+## Testing
+
+Conformance tests for JSON Schema and its vocabularies are maintained in the [JSON Schema Test Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite).
+
+When contributing new features:
+- Add corresponding tests to the test suite
+- Ensure existing tests continue to pass
+- Document any changes to test expectations
+
+## Need Help?
+
+If you have questions about contributing, see our [Support](/community/support) page for guidance on where to ask.
+
+Thank you for contributing to JSON Schema!

@@ -1,0 +1,108 @@
+---
+title: Creating Proposals
+description: How to create and submit proposals for new JSON Schema features
+---
+
+## Overview
+
+Once a rough consensus for a feature idea has been reached during the Concept stage, a formal proposal must be written to precisely define specification changes.
+
+## Creating a Proposal
+
+<Steps>
+  <Step title="Use the Proposal Template">
+    The proposal uses the Proposal Template and is stored in the repository's `proposals` folder.
+  </Step>
+  
+  <Step title="Create a Draft ADR">
+    Include a draft ADR (Architecture Decision Record) using the file name of the proposal document with an `-adr` suffix: `{proposal-file-name}-adr.md`.
+    
+    This ADR should include additional information from the "Concept" discussion, such as:
+    - Use cases
+    - Alternatives considered
+    - Design rationale
+    - Expected complexity
+  </Step>
+  
+  <Step title="Update Meta-schemas">
+    Add proposed keywords to the appropriate vocabulary meta-schemas in:
+    - Latest published release
+    - The `main` branch of the repository
+    
+    The subschema for the proposed keyword should contain only a `$comment` keyword indicating that the feature is experimental and containing a link to the proposal document.
+  </Step>
+  
+  <Step title="Add Tests">
+    Add tests for the proposal to the JSON Schema Test Suite.
+  </Step>
+  
+  <Step title="Publish Initial Draft">
+    Once the initial draft of the proposal has been completed and published, the feature moves into the Experimentation stage.
+  </Step>
+</Steps>
+
+## Proposal Requirements
+
+A formal proposal should precisely define:
+
+- The specification changes required
+- The syntax of new keywords
+- The behavior and semantics
+- How it integrates with existing features
+- Validation requirements
+
+## Meta-schema Format
+
+When adding a proposed keyword to meta-schemas, use this format:
+
+```json
+{
+  "proposedKeyword": {
+    "$comment": "Experimental feature. See proposal: [link to proposal document]"
+  }
+}
+```
+
+<Note>
+This approach allows the proposed keyword but does not validate it, as its syntax may change during the proposal/experimentation process. It also permits different implementations to support different variations of each proposal separately.
+</Note>
+
+## From Proposal to Stable
+
+The proposal serves as the specification for the feature during the Experimentation stage. Feedback from implementers and users will result in refinements to the proposal.
+
+To advance from Experimentation to Stable, the following criteria must be met:
+
+- At least five (5) implementations support the feature
+- There is sufficient evidence of use
+- No changes are requested for a period of six (6) weeks
+
+## If a Proposal Cannot Advance
+
+If a proposal cannot advance to the Stable stage, it may be removed:
+
+<Steps>
+  <Step title="Archive Proposal">
+    Move the proposal document to an `archive` subfolder.
+  </Step>
+  
+  <Step title="Remove Keywords">
+    Remove the keyword from the meta-schemas.
+  </Step>
+  
+  <Step title="Archive Tests">
+    Move any tests to an `archive` subfolder.
+  </Step>
+</Steps>
+
+<Note>
+The removal of a feature which has not reached the stable state is not considered a breaking change.
+</Note>
+
+## Breaking Changes in Proposals
+
+<Warning>
+Breaking changes to a proposed feature MAY occur, but are highly discouraged.
+</Warning>
+
+Since proposals are experimental, the syntax and behavior may change based on feedback. However, once implementations begin supporting a proposal, changes should be minimized to avoid disruption.

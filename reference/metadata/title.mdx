@@ -1,0 +1,138 @@
+---
+title: title
+description: Provide a short, descriptive title for a schema to enhance user interface displays and documentation
+---
+
+The `title` keyword provides a short, human-readable title for a schema. It is primarily used to decorate user interfaces with information about the data described by the schema.
+
+## Syntax
+
+The value of `title` must be a string.
+
+```json
+{
+  "title": "string"
+}
+```
+
+## Purpose
+
+The `title` keyword is a metadata annotation that:
+
+- Provides a short, descriptive name for the schema
+- Enhances user interface displays with human-readable labels
+- Improves documentation readability
+- Has no effect on validation (it is purely informational)
+
+A title should preferably be short, whereas a `description` provides more detailed explanation about the purpose of the instance described by the schema.
+
+## Examples
+
+### Basic Usage
+
+```json
+{
+  "type": "string",
+  "title": "Email Address",
+  "format": "email"
+}
+```
+
+This schema describes an email address field with a user-friendly title that could be displayed as a form label.
+
+### Object Property Titles
+
+```json
+{
+  "type": "object",
+  "title": "User Profile",
+  "properties": {
+    "firstName": {
+      "type": "string",
+      "title": "First Name"
+    },
+    "lastName": {
+      "type": "string",
+      "title": "Last Name"
+    },
+    "age": {
+      "type": "integer",
+      "title": "Age",
+      "minimum": 0
+    }
+  }
+}
+```
+
+Each property has its own title that can be used to generate form labels or display names in a user interface.
+
+### API Response Schema
+
+```json
+{
+  "type": "object",
+  "title": "Product",
+  "properties": {
+    "id": {
+      "type": "string",
+      "title": "Product ID",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string",
+      "title": "Product Name"
+    },
+    "price": {
+      "type": "number",
+      "title": "Price (USD)",
+      "minimum": 0
+    }
+  },
+  "required": ["id", "name", "price"]
+}
+```
+
+This schema uses titles to provide clear, business-friendly names for API response fields.
+
+### Array Schema
+
+```json
+{
+  "type": "array",
+  "title": "Shopping Cart Items",
+  "items": {
+    "type": "object",
+    "title": "Cart Item",
+    "properties": {
+      "productId": {
+        "type": "string",
+        "title": "Product ID"
+      },
+      "quantity": {
+        "type": "integer",
+        "title": "Quantity",
+        "minimum": 1
+      }
+    }
+  }
+}
+```
+
+Both the array and its items have titles to describe what they represent.
+
+## Relationship with Description
+
+The `title` and `description` keywords work together to provide comprehensive metadata:
+
+- `title`: Short, concise label (often used as a heading or form label)
+- `description`: Longer explanation of the purpose and usage
+
+```json
+{
+  "type": "string",
+  "title": "Password",
+  "description": "User password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters",
+  "minLength": 8,
+  "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).+$"
+}
+```

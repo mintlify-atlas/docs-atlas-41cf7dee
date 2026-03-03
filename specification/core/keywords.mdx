@@ -1,0 +1,280 @@
+---
+title: Introduction to Keywords
+description: Understanding keyword behaviors, scopes, interactions, and categories in JSON Schema
+---
+
+## Keyword Behaviors
+
+JSON Schema keywords may exhibit one or more behaviors. This specification defines three fundamental behaviors:
+
+<CardGroup cols={3}>
+  <Card title="Assertions" icon="check">
+    Validate that an instance satisfies constraints, producing a boolean result: `true` if satisfied, `false` otherwise
+  </Card>
+  
+  <Card title="Annotations" icon="tag">
+    Attach information to instance locations that applications may use in any way they see fit
+  </Card>
+  
+  <Card title="Applicators" icon="arrow-right-to-bracket">
+    Apply subschemas to parts of the instance and combine or modify their results
+  </Card>
+</CardGroup>
+
+Extension keywords SHOULD be defined using these behaviors. However, extension keywords MAY define other behaviors for specialized purposes.
+
+<Note>
+This specification also defines several operational directive keywords, such as `$id` and `$schema`, which do not exhibit these behaviors. Instead, they provide metadata that instructs implementations on how to interpret and process the schema.
+</Note>
+
+### Evaluation Process
+
+Evaluating an instance against a schema involves processing all keywords in the schema against appropriate locations within the instance:
+
+1. Applicator keywords are processed until a schema object with no applicators is reached
+2. The appropriate location in the instance is evaluated against the assertion and annotation keywords
+3. Results are combined according to the rules for each keyword type
+
+Evaluation can complete once all subschemas have been evaluated, although it may be short-circuited due to assertion results. When collecting annotations, some short-circuiting is not possible.
+
+## Lexical Scope and Dynamic Scope
+
+While most keywords can be evaluated independently, a few have more complex behavior governed by their scope.
+
+### Lexical Scope
+
+The **lexical scope** of a keyword is determined by the nested JSON data structure of objects and arrays:
+
+- **Smallest scope**: A single schema object with no subschemas
+- **Largest scope**: An entire schema document, recursively including all subschemas
+
+Keywords MAY be defined with a partial value that must be resolved against another value found within the lexical structure. For example:
+
+```json
+{
+  "$id": "https://example.com/schema",
+  "properties": {
+    "foo": {
+      "$id": "relative/path",  // Resolves to https://example.com/relative/path
+      "type": "string"
+    }
+  }
+}
+```
+
+<Info>
+Some keywords, such as `$schema`, apply to the lexical scope of the entire schema resource and therefore MUST only appear in a schema resource's root object.
+</Info>
+
+### Dynamic Scope
+
+The **dynamic scope** is the ordered collection of schema resources navigated during evaluation, starting at the root and ending at the schema under evaluation.
+
+Lexical and dynamic scopes align until a reference keyword is encountered. When following a reference:
+
+- Processing moves from one lexical scope to another
+- From a dynamic scope perspective, following a reference is no different from descending into a subschema
+- Keywords that resolve information through dynamic scope consider the originating side of the reference as the dynamic parent
+
+<Warning>
+Dynamic scope is primarily used with `$dynamicRef` and `$dynamicAnchor`, and should be considered an advanced feature. Use with caution when defining additional keywords.
+</Warning>
+
+Dynamic scope is important when reporting errors and collected annotations, as it may be possible to revisit the same lexical scope repeatedly with different dynamic scopes.
+
+## Keyword Interactions
+
+Unless otherwise specified, keywords act independently.
+
+Keywords MAY modify their behavior based on the presence, absence, or value of another keyword in the same schema object. Such keywords MUST NOT result in a circular dependency.
+
+### Types of Dependencies
+
+<Tabs>
+  <Tab title="Static Dependencies">
+    The dependency relies on the presence or contents of another keyword.
+    
+    ```json
+    {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1  // Static dependency on array type
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Dynamic Dependencies">
+    The dependency relies on the evaluation of another keyword against an instance. May depend on annotations produced or validation results.
+    
+    ```json
+    {
+      "properties": {
+        "foo": { "type": "string" }
+      },
+      "additionalProperties": false  // Dynamic dependency on properties
+    }
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+These mechanisms describe dependencies for illustrative purposes and are not prescriptive. Implementations MAY use any mechanism that achieves the specified behaviors.
+</Note>
+
+## Default Behaviors
+
+A missing keyword:
+
+- MUST NOT produce a false assertion result
+- MUST NOT produce annotation results
+- MUST NOT cause any other schema to be evaluated as part of its own behavioral definition
+
+However, the lack of annotation results may indirectly change the behavior of other keywords.
+
+<Tip>
+In some cases, the missing keyword assertion behavior is identical to that produced by a certain value. Keyword definitions SHOULD note such values where known.
+</Tip>
+
+### Annotation Collection
+
+Because annotation collection can add significant cost in terms of both computation and memory, implementations MAY opt out of this feature.
+
+Keywords that are specified in terms of collected annotations SHOULD describe reasonable alternate approaches when appropriate. This is demonstrated by the `items` and `additionalProperties` keywords.
+
+<Warning>
+When no alternate approach is possible for a keyword, implementations that do not support annotation collections will not be able to support those keywords.
+</Warning>
+
+## Keyword Categories
+
+### Identifiers
+
+Identifiers define IRIs for a schema or affect how such IRIs are resolved in references, or both. This document defines several identifying keywords, most notably `$id`.
+
+Canonical schema IRIs MUST NOT change while processing an instance, but keywords that affect IRI reference resolution MAY have behavior that is only fully determined at runtime.
+
+### Applicators
+
+Applicators allow for building more complex schemas than can be accomplished with a single schema object.
+
+Applicator keywords:
+
+- Determine which additional schemas are applied
+- May apply schemas in-place to the current location or to a child location
+- Behave as assertions, using the assertion results of each subschema
+- Modify (e.g., `not` negates its subschema) and/or combine (e.g., `allOf` takes the conjunction) subschema results
+
+<Info>
+Applicators may apply any boolean logic operation to subschema assertion results, but SHOULD NOT introduce new assertion conditions of their own.
+</Info>
+
+Annotation results from subschemas are preserved so that applications can decide how to interpret multiple values.
+
+#### Referenced and Referencing Schemas
+
+An applicator keyword may refer to a schema rather than including it as a subschema:
+
+- **Referenced schema**: The schema being applied
+- **Referencing schema**: The schema containing the applicator keyword
+
+Referenced and referencing schemas are dynamic concepts. Different pairs of schemas may find themselves in various referenced and referencing arrangements during evaluation.
+
+Some by-reference applicators (like `$ref`) can be determined by static analysis. Others (like `$dynamicRef` with `$dynamicAnchor`) may use dynamic scoping and are only resolvable during evaluation.
+
+### Assertions
+
+JSON Schema can be used to assert constraints on a JSON document, which either passes or fails the assertions. Implementations produce a single boolean result when evaluating an instance against schema assertions.
+
+<Note>
+An instance can only fail an assertion that is present in the schema.
+</Note>
+
+#### Assertions and Instance Primitive Types
+
+Most assertions only constrain values within a certain primitive type. When the instance is not of the type targeted by the keyword, the instance is considered to conform to the assertion.
+
+For example, the `maxLength` keyword only restricts certain strings (those that are too long). If the instance is a number, boolean, null, array, or object, it is valid against this assertion.
+
+This allows keywords to be used easily with instances that can be of multiple primitive types:
+
+```json
+{
+  "type": ["string", "null"],
+  "maxLength": 255
+}
+```
+
+This schema allows either a string (up to 255 characters) or a null value.
+
+### Annotations
+
+JSON Schema can annotate an instance with information whenever the instance validates against the schema object containing the annotation and all of its parent schema objects.
+
+Annotations are attached to specific locations in an instance. Since many subschemas can be applied to any single location, applications may need to decide how to handle differing annotation values.
+
+<Tip>
+Unlike assertion results, annotation data can take a wide variety of forms, which are provided to applications to use as they see fit. JSON Schema implementations are not expected to make use of the collected information on behalf of applications.
+</Tip>
+
+Unless otherwise specified, a keyword's annotation value is the value of the keyword itself. However, other behaviors are possible.
+
+While "short-circuit" evaluation is possible for assertions, collecting annotations requires examining all schemas that apply to an instance location, even if they cannot change the overall assertion result.
+
+<Warning>
+The only exception is that subschemas of a schema object that has failed validation MAY be skipped, as annotations are not retained for failing schemas.
+</Warning>
+
+#### Collecting Annotations
+
+A collected annotation MUST include:
+
+- The name of the keyword that produces the annotation
+- The instance location (as a JSON Pointer)
+- The evaluation path (showing how references were followed)
+- The absolute schema location (as an IRI)
+- The attached value(s)
+
+#### Annotations and Assertions
+
+Schema objects that produce a false assertion result MUST NOT produce any annotation results, whether from their own keywords or from keywords in subschemas.
+
+Example:
+
+```json
+{
+  "oneOf": [
+    {
+      "title": "Integer Value",
+      "type": "integer"
+    },
+    {
+      "title": "String Value",
+      "type": "string"
+    }
+  ]
+}
+```
+
+Against the instance `"This is a string"`, the title annotation "Integer Value" is discarded because the type assertion in that schema object fails. The title annotation "String Value" is kept.
+
+### Reserved Locations
+
+A fourth category of keywords simply reserve a location to hold re-usable components or data of interest to schema authors. These keywords:
+
+- Do not affect validation or annotation results
+- Ensure locations are available for certain purposes
+- Will not be redefined by extension keywords
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Core Keywords" href="../keywords/core" icon="dollar-sign">
+    Explore the essential keywords beginning with `$`
+  </Card>
+  <Card title="Applicator Keywords" href="../keywords/applicators" icon="share-nodes">
+    Learn about keywords for applying subschemas
+  </Card>
+  <Card title="Schema Structure" href="./schemas" icon="sitemap">
+    Understand schema resources and composition
+  </Card>
+</CardGroup>

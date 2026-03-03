@@ -1,0 +1,162 @@
+---
+title: allOf
+description: Validate against all specified schemas
+---
+
+The `allOf` keyword validates an instance against all schemas defined in its array value. This enables combining multiple schema constraints, making it useful for composition and extending schemas.
+
+## Syntax
+
+```json
+{
+  "allOf": [
+    { /* schema 1 */ },
+    { /* schema 2 */ },
+    { /* schema 3 */ }
+  ]
+}
+```
+
+The value must be a non-empty array where each item is a valid JSON Schema.
+
+## Behavior
+
+An instance validates successfully against `allOf` if and only if it validates successfully against **all** schemas in the array.
+
+- All subschemas are evaluated independently
+- The instance must satisfy every subschema
+- If any subschema fails, the entire `allOf` fails
+- Annotations from all successful subschemas are collected
+
+## Examples
+
+### Combining Type Constraints
+
+Require a string with both minimum length and pattern constraints:
+
+```json
+{
+  "allOf": [
+    {
+      "type": "string",
+      "minLength": 5
+    },
+    {
+      "pattern": "^[A-Z]"
+    }
+  ]
+}
+```
+
+Valid: `"Hello"`, `"World123"`  
+Invalid: `"hi"` (too short), `"hello"` (doesn't start with uppercase)
+
+### Extending Base Schemas
+
+Combine a base schema with additional constraints:
+
+```json
+{
+  "$defs": {
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    }
+  },
+  "allOf": [
+    { "$ref": "#/$defs/address" },
+    {
+      "properties": {
+        "country": { "type": "string" }
+      },
+      "required": ["country"]
+    }
+  ]
+}
+```
+
+This extends the base address schema to require a country field.
+
+### Numeric Range Constraints
+
+Combine minimum and maximum constraints:
+
+```json
+{
+  "allOf": [
+    {
+      "type": "number",
+      "minimum": 0
+    },
+    {
+      "maximum": 100
+    },
+    {
+      "multipleOf": 5
+    }
+  ]
+}
+```
+
+Valid: `0`, `5`, `50`, `100`  
+Invalid: `-5`, `3`, `105`
+
+### Schema Composition
+
+Compose object schemas from multiple pieces:
+
+```json
+{
+  "$defs": {
+    "withId": {
+      "properties": {
+        "id": { "type": "integer" }
+      },
+      "required": ["id"]
+    },
+    "withTimestamp": {
+      "properties": {
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["createdAt"]
+    },
+    "withAuthor": {
+      "properties": {
+        "author": { "type": "string" }
+      },
+      "required": ["author"]
+    }
+  },
+  "allOf": [
+    { "$ref": "#/$defs/withId" },
+    { "$ref": "#/$defs/withTimestamp" },
+    { "$ref": "#/$defs/withAuthor" }
+  ]
+}
+```
+
+Valid instance:
+```json
+{
+  "id": 123,
+  "createdAt": "2024-01-15T10:30:00Z",
+  "author": "Jane Doe"
+}
+```
+
+## Common Use Cases
+
+- **Schema composition**: Build complex schemas from simpler, reusable pieces
+- **Adding constraints**: Extend a base schema with additional requirements
+- **Multiple validations**: Apply different validation rules that must all pass
+- **Intersection types**: Require an instance to satisfy multiple type definitions
+
+## Notes
+
+- When collecting annotations, all subschemas must be examined even if validation could short-circuit
+- `allOf` with a single schema is valid but redundant
+- Empty arrays are not permitted
+- Subschemas are evaluated independently and do not affect each other

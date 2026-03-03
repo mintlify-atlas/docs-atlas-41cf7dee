@@ -1,0 +1,252 @@
+---
+title: Output Formatting
+description: Standard formats for JSON Schema validation and annotation output
+---
+
+JSON Schema implementations should provide well-defined output formats to foster increased usability and interoperability. This document defines common terminology for output specifications.
+
+## Overview
+
+Because JSON Schema has multiple use cases with different intended consumers, the specification defers the details of output formats to other documents. However, implementations are encouraged to support multiple output formats as required by their target user base.
+
+<Info>
+This section defines common terms that should be used in JSON Schema output specifications to align the vernacular across differing formats.
+</Info>
+
+## Required Terminology
+
+Output specifications which use the information defined below must use this terminology to describe it. Conversely, output specifications which use these terms must maintain their meaning.
+
+### Evaluation Path
+
+The evaluation path is the set of keys, starting from the schema root, through which evaluation passes to reach the schema object that produced a specific result.
+
+The value must be expressed as a **JSON Pointer**, and it must include any by-reference applicators such as `$ref` or `$dynamicRef`.
+
+**Example:**
+```
+/properties/width/$ref/allOf/1
+```
+
+<Note>
+This pointer may not be resolvable on the root schema by the normal JSON Pointer process. It is intended as an indication of the traversal path only.
+</Note>
+
+**JSON Key:** When represented in JSON, the key for this information must be `"evaluationPath"`.
+
+### Schema Location
+
+The schema location is the **canonical URI** of the schema object plus a JSON Pointer fragment indicating the subschema that produced a result.
+
+In contrast with the evaluation path, the schema location must **not** include by-reference applicators such as `$ref` or `$dynamicRef`.
+
+**Example:**
+```
+https://example.com/schemas/common#/$defs/allOf/1
+```
+
+This provides the actual location of the schema in its canonical form, regardless of how evaluation reached it.
+
+**JSON Key:** When represented in JSON, the key for this information must be `"schemaLocation"`.
+
+### Instance Location
+
+The instance location is the location of the JSON value within the root instance being validated.
+
+The value must be expressed as a **JSON Pointer**.
+
+**Example:**
+```
+/users/0/address/postalCode
+```
+
+This indicates exactly which part of the instance document is being described.
+
+**JSON Key:** When represented in JSON, the key for this information must be `"instanceLocation"`.
+
+## Output Components
+
+### Errors
+
+Errors are textual representations of individual validation failures, often intended for human consumers.
+
+<Info>
+This specification contains no requirements for the content of these errors.
+</Info>
+
+Output specifications which include errors should be written such that:
+- The sources (schema and instance) of a given error are easily identifiable
+- The terminology defined by this document is used for identifying locations
+
+**Example error object:**
+```json
+{
+  "instanceLocation": "/users/0/age",
+  "schemaLocation": "https://example.com/schema#/properties/age",
+  "error": "Value must be greater than or equal to 0"
+}
+```
+
+### Annotations
+
+Many keywords are defined to produce annotations, whether intended for:
+- **Inter-keyword communication** - e.g., between `properties` and `unevaluatedProperties`
+- **Application consumption** - e.g., `title`, `description`, or `default`
+
+Annotation values may be of any type and are defined by the keywords that produced them.
+
+Output specifications which include annotations should be written such that:
+- They can be easily associated with the data defined in the annotation collection section
+- The terminology defined by this document is used
+
+**Example annotation object:**
+```json
+{
+  "instanceLocation": "/config/port",
+  "schemaLocation": "https://example.com/schema#/properties/port",
+  "keyword": "default",
+  "annotation": 8080
+}
+```
+
+### Dropped Annotations
+
+A dropped annotation is any annotation produced and subsequently dropped by the evaluation due to an unsuccessful validation result of the containing subschema.
+
+<Warning>
+This information may be included only if the validation result of the containing subschema was unsuccessful. It must not be included if the local validation result was successful.
+</Warning>
+
+#### When to Include
+
+As the intended purpose for including dropped annotations is **debugging**, implementations that provide dropped annotations should:
+
+- **Not** provide them as default behavior
+- Only include them when explicitly configured to do so
+- Include them by default only in debugging tools
+
+**Example:**
+```json
+{
+  "instanceLocation": "/data",
+  "schemaLocation": "https://example.com/schema#/oneOf/0",
+  "keyword": "title",
+  "annotation": "First Option",
+  "dropped": true
+}
+```
+
+Output specifications which include dropped annotations should:
+- Make them easily distinguishable from retained annotations
+- Associate them with the data defined in the annotation collection section
+- Use the terminology defined by this document
+
+## Example Output Format
+
+Here's an example of how these concepts might be combined in a structured output:
+
+```json
+{
+  "valid": false,
+  "errors": [
+    {
+      "instanceLocation": "/users/0/age",
+      "evaluationPath": "/properties/users/items/properties/age",
+      "schemaLocation": "https://example.com/schema#/properties/age",
+      "keyword": "minimum",
+      "error": "Value must be at least 0"
+    }
+  ],
+  "annotations": [
+    {
+      "instanceLocation": "/users",
+      "evaluationPath": "/properties/users",
+      "schemaLocation": "https://example.com/schema#/properties/users",
+      "keyword": "title",
+      "annotation": "User List"
+    },
+    {
+      "instanceLocation": "/users/0",
+      "evaluationPath": "/properties/users/items",
+      "schemaLocation": "https://example.com/schema#/$defs/user",
+      "keyword": "properties",
+      "annotation": ["name", "age", "email"]
+    }
+  ]
+}
+```
+
+## Path Differences
+
+### Evaluation Path vs Schema Location
+
+Understanding the difference between these two concepts is crucial:
+
+**Evaluation Path:**
+- Shows how the validator **navigated** to reach a schema
+- Includes `$ref` and other reference keywords
+- May not be a valid JSON Pointer into the schema document
+- Useful for understanding the logical flow of validation
+
+**Schema Location:**
+- Shows the **canonical location** of the schema
+- Does not include reference keywords
+- Always a valid URI + JSON Pointer to the actual schema
+- Useful for finding the exact schema definition
+
+**Example:**
+
+Given this schema:
+```json
+{
+  "$id": "https://example.com/schema",
+  "properties": {
+    "user": {
+      "$ref": "#/$defs/person"
+    }
+  },
+  "$defs": {
+    "person": {
+      "properties": {
+        "name": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+For the `name` property validation:
+- **Evaluation Path:** `/properties/user/$ref/properties/name`
+- **Schema Location:** `https://example.com/schema#/$defs/person/properties/name`
+
+## Implementation Considerations
+
+### Performance
+
+Collecting detailed output information can impact performance:
+
+<Info>
+Implementations may want to offer different output modes:
+- **Fast mode:** Boolean result only
+- **Standard mode:** Basic errors and annotations
+- **Debug mode:** Full details including dropped annotations and evaluation paths
+</Info>
+
+### Interoperability
+
+Using consistent terminology across implementations helps users:
+- Understand output from different validators
+- Build tools that work with multiple implementations
+- Learn JSON Schema concepts more easily
+
+### Extensibility
+
+Output formats may include additional information beyond what's defined here, such as:
+- Performance metrics
+- Schema validation details
+- Custom keyword outputs
+- Implementation-specific metadata
+
+<Note>
+When extending output formats, use the terminology defined here for the standard components to maintain interoperability.
+</Note>

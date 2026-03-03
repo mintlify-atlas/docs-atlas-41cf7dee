@@ -1,0 +1,269 @@
+---
+title: String Validation
+description: Keywords for validating string length and pattern matching
+---
+
+JSON Schema provides several keywords for validating string instances.
+
+## minLength
+
+Specifies the minimum length of a string.
+
+### Syntax
+
+The value must be a non-negative integer.
+
+```json
+{
+  "minLength": 5
+}
+```
+
+### Validation Rules
+
+A string instance is valid if its length is greater than or equal to the specified value.
+
+The length is defined as the number of Unicode code points in the string.
+
+### Examples
+
+```json
+{
+  "type": "string",
+  "minLength": 3
+}
+```
+
+Valid instances:
+```json
+"abc"
+"hello"
+"12345"
+```
+
+Invalid instances:
+```json
+"ab"
+"a"
+""
+```
+
+### Default Behavior
+
+Omitting `minLength` is equivalent to `minLength: 0`, which means empty strings are allowed.
+
+## maxLength
+
+Specifies the maximum length of a string.
+
+### Syntax
+
+The value must be a non-negative integer.
+
+```json
+{
+  "maxLength": 10
+}
+```
+
+### Validation Rules
+
+A string instance is valid if its length is less than or equal to the specified value.
+
+The length is defined as the number of Unicode code points in the string.
+
+### Examples
+
+```json
+{
+  "type": "string",
+  "maxLength": 5
+}
+```
+
+Valid instances:
+```json
+"abc"
+"hello"
+""
+```
+
+Invalid instances:
+```json
+"toolong"
+"abcdef"
+```
+
+## pattern
+
+Validates that a string matches a regular expression.
+
+### Syntax
+
+The value must be a string containing a valid regular expression.
+
+```json
+{
+  "pattern": "^[A-Z][a-z]+$"
+}
+```
+
+### Validation Rules
+
+A string instance is valid if the regular expression matches the string successfully.
+
+**Important**: Regular expressions are not implicitly anchored. To match the entire string, use anchors like `^` (start) and `$` (end).
+
+### Regular Expression Dialect
+
+The pattern should be a valid regular expression according to ECMA-262. See the [interoperability considerations](/specification/validation/overview) in the specification for details.
+
+### Examples
+
+#### Email Pattern
+
+```json
+{
+  "type": "string",
+  "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+}
+```
+
+Valid instances:
+```json
+"user@example.com"
+"john.doe@company.co.uk"
+```
+
+Invalid instances:
+```json
+"invalid.email"
+"@example.com"
+```
+
+#### Phone Number Pattern
+
+```json
+{
+  "type": "string",
+  "pattern": "^\\+?[1-9]\\d{1,14}$"
+}
+```
+
+Valid instances:
+```json
+"+14155552671"
+"14155552671"
+```
+
+#### Alphanumeric Pattern
+
+```json
+{
+  "type": "string",
+  "pattern": "^[a-zA-Z0-9]+$"
+}
+```
+
+Valid instances:
+```json
+"abc123"
+"TEST"
+"123"
+```
+
+Invalid instances:
+```json
+"hello world"
+"test@123"
+```
+
+#### Partial Matching
+
+```json
+{
+  "pattern": "JSON"
+}
+```
+
+This matches any string containing "JSON" anywhere:
+```json
+"I love JSON"
+"JSON Schema"
+"myJSON"
+```
+
+## Combining String Keywords
+
+Multiple string validation keywords can be used together.
+
+### Username Validation
+
+```json
+{
+  "type": "string",
+  "minLength": 3,
+  "maxLength": 20,
+  "pattern": "^[a-zA-Z0-9_-]+$"
+}
+```
+
+This validates a username that:
+- Is between 3 and 20 characters long
+- Contains only letters, numbers, underscores, and hyphens
+
+Valid instances:
+```json
+"john_doe"
+"user123"
+"my-username"
+```
+
+Invalid instances:
+```json
+"ab"                  // Too short
+"verylongusernamehere123" // Too long
+"user@name"          // Invalid character
+```
+
+### Password Validation
+
+```json
+{
+  "type": "string",
+  "minLength": 8,
+  "pattern": "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]+$"
+}
+```
+
+This validates a password that:
+- Is at least 8 characters long
+- Contains at least one lowercase letter, one uppercase letter, one digit, and one special character
+
+### Product Code
+
+```json
+{
+  "type": "string",
+  "minLength": 8,
+  "maxLength": 8,
+  "pattern": "^[A-Z]{3}-\\d{4}$"
+}
+```
+
+Valid instance:
+```json
+"ABC-1234"
+```
+
+## Unicode Considerations
+
+The `minLength` and `maxLength` keywords count Unicode code points, not bytes or visible characters.
+
+```json
+{
+  "minLength": 3
+}
+```
+
+The string `"😀👍✨"` has a length of 3 code points and is valid, even though it may appear as multiple characters depending on how emojis are rendered.

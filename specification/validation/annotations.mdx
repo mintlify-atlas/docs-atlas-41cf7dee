@@ -1,0 +1,497 @@
+---
+title: "Meta-Data Annotations"
+description: "Learn about JSON Schema annotation keywords including title, description, default, deprecated, readOnly, writeOnly, and examples"
+---
+
+## Overview
+
+Annotation keywords provide commonly used information for documentation and user interface display purposes. They are not intended to form a comprehensive set of features. Rather, additional keywords can be defined for more complex annotation-based applications.
+
+<Info>
+Annotation keywords produce **no assertion result** and therefore are not considered during validation. They provide metadata about the schema and instances.
+</Info>
+
+## Characteristics
+
+Annotation keywords:
+
+- Do not affect validation success or failure
+- Provide information for documentation
+- Guide user interface generation
+- Describe the purpose and usage of data
+- Can be collected by implementations for reporting
+
+## Documentation Keywords
+
+### `title`
+
+Provides a short, human-readable title for the schema.
+
+**Value**: String
+
+```json
+{
+  "type": "object",
+  "title": "User Profile",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Full Name"
+    }
+  }
+}
+```
+
+<Tip>
+A title will preferably be **short** and used for labeling or headings in user interfaces.
+</Tip>
+
+### `description`
+
+Provides a detailed explanation about the purpose of the schema or property.
+
+**Value**: String
+
+```json
+{
+  "type": "string",
+  "title": "Email Address",
+  "description": "The user's primary email address used for notifications and account recovery"
+}
+```
+
+<Tip>
+A description will provide **explanation** about the purpose of the instance described by this schema. It can be longer and more detailed than a title.
+</Tip>
+
+### Example: Combined Title and Description
+
+```json
+{
+  "type": "object",
+  "title": "Product",
+  "description": "A product available for purchase in the catalog",
+  "properties": {
+    "sku": {
+      "type": "string",
+      "title": "SKU",
+      "description": "Stock Keeping Unit - unique product identifier",
+      "pattern": "^[A-Z]{2}\\d{6}$"
+    },
+    "name": {
+      "type": "string",
+      "title": "Product Name",
+      "description": "The display name of the product shown to customers"
+    },
+    "price": {
+      "type": "number",
+      "title": "Price",
+      "description": "Product price in USD, excluding taxes",
+      "minimum": 0
+    }
+  }
+}
+```
+
+## Default Values
+
+### `default`
+
+Supplies a default JSON value associated with a particular schema.
+
+**Value**: Any JSON value
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "theme": {
+      "type": "string",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "notifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "pageSize": {
+      "type": "integer",
+      "default": 20,
+      "minimum": 10,
+      "maximum": 100
+    }
+  }
+}
+```
+
+<Note>
+It is RECOMMENDED that a default value be valid against the associated schema. However, this is not enforced.
+</Note>
+
+<Accordion title="Behavior with Multiple Occurrences">
+When multiple occurrences of this keyword are applicable to a single sub-instance, implementations SHOULD remove duplicates.
+</Accordion>
+
+## Deprecation
+
+### `deprecated`
+
+Indicates that a property or schema should not be used in new implementations.
+
+**Value**: Boolean
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string"
+    },
+    "login": {
+      "type": "string",
+      "deprecated": true,
+      "description": "Use 'username' instead. This field will be removed in v2.0"
+    }
+  }
+}
+```
+
+<Warning>
+If `deprecated` has a value of boolean `true`, it indicates that applications SHOULD refrain from usage of the declared property. It may mean the property is going to be removed in the future.
+</Warning>
+
+#### Behavior
+
+- Omitting this keyword has the same behavior as a value of `false`
+- When multiple occurrences are applicable to a single sub-instance, applications SHOULD consider the instance location deprecated if **any** occurrence specifies `true`
+- A root schema containing `deprecated: true` indicates that the entire resource being described may be removed in the future
+
+<Accordion title="Deprecation with Arrays and Objects">
+The `deprecated` keyword applies to each instance location to which the schema object successfully applies. This can result in scenarios where every array item or object property is deprecated even though the containing array or object is not.
+
+**Example**:
+```json
+{
+  "type": "array",
+  "items": {
+    "type": "string",
+    "deprecated": true
+  }
+}
+```
+
+In this example, each item in the array is marked as deprecated, but the array itself is not deprecated.
+</Accordion>
+
+## Read/Write Semantics
+
+These keywords indicate directionality of data flow between client and server.
+
+### `readOnly`
+
+Indicates that a value is managed exclusively by the owning authority.
+
+**Value**: Boolean
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true,
+      "description": "Auto-generated by the database"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "name": {
+      "type": "string"
+    }
+  }
+}
+```
+
+<Info>
+If `readOnly` has a value of boolean `true`, it indicates that attempts by an application to modify the value are expected to be **ignored or rejected** by the owning authority.
+</Info>
+
+#### Behavior
+
+- An instance document marked as `readOnly` for the entire document may be ignored if sent to the owning authority, or may result in an error
+- Typically used for database-generated values like IDs, timestamps, or calculated fields
+- User interfaces MAY display read-only fields as non-editable
+
+### `writeOnly`
+
+Indicates that a value is never present when retrieved from the owning authority.
+
+**Value**: Boolean
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "username": {
+      "type": "string"
+    },
+    "password": {
+      "type": "string",
+      "writeOnly": true,
+      "minLength": 8
+    }
+  }
+}
+```
+
+<Warning>
+If `writeOnly` has a value of boolean `true`, it indicates that the value is **never present** when the instance is retrieved from the owning authority. It can be present when sent to update or create the document, but it will not be included in any response.
+</Warning>
+
+#### Behavior
+
+- An instance document marked as `writeOnly` for the entire document may be returned as a blank document, produce an error upon retrieval, or have the retrieval request ignored
+- Typically used for sensitive fields like passwords, API keys, or credit card numbers
+- User interfaces MAY use a widget that hides input values (e.g., password field) for write-only fields
+
+<Accordion title="Common Use Cases">
+**`readOnly` examples**:
+- Database-generated serial numbers
+- Created/updated timestamps
+- Calculated fields (e.g., full name derived from first + last)
+- System status fields
+
+**`writeOnly` examples**:
+- Passwords
+- API keys
+- Credit card numbers
+- Security tokens
+</Accordion>
+
+### Combined Example
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "readOnly": true
+    },
+    "username": {
+      "type": "string"
+    },
+    "password": {
+      "type": "string",
+      "writeOnly": true,
+      "minLength": 8
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    },
+    "updatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "readOnly": true
+    }
+  },
+  "required": ["username", "password"]
+}
+```
+
+<Note>
+Omitting `readOnly` or `writeOnly` has the same behavior as values of `false`.
+</Note>
+
+<Accordion title="Behavior with Multiple Occurrences">
+When multiple occurrences of these keywords are applicable to a single sub-instance, the resulting behavior SHOULD be as for a `true` value if **any** occurrence specifies a `true` value, and SHOULD be as for a `false` value otherwise.
+</Accordion>
+
+## Examples
+
+### `examples`
+
+Provides sample JSON values associated with a schema for illustrating usage.
+
+**Value**: Array (no restrictions on values within the array)
+
+```json
+{
+  "type": "string",
+  "pattern": "^[A-Z]{2}\\d{6}$",
+  "examples": [
+    "AB123456",
+    "XY987654",
+    "CD555555"
+  ]
+}
+```
+
+<Tip>
+It is RECOMMENDED that these values be valid against the associated schema, but this is not enforced.
+</Tip>
+
+### Multiple Examples for Complex Objects
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" },
+    "email": { "type": "string", "format": "email" }
+  },
+  "examples": [
+    {
+      "name": "John Doe",
+      "age": 30,
+      "email": "john@example.com"
+    },
+    {
+      "name": "Jane Smith",
+      "age": 25,
+      "email": "jane@example.com"
+    }
+  ]
+}
+```
+
+<Accordion title="Behavior with Multiple Occurrences">
+When multiple occurrences of this keyword are applicable to a single sub-instance, implementations MUST provide a **flat array** of all values rather than an array of arrays.
+</Accordion>
+
+<Info>
+Implementations MAY use the value(s) of `default`, if present, as an additional example. If `examples` is absent, `default` MAY still be used in this manner.
+</Info>
+
+## Complete Example: API Resource Schema
+
+```json
+{
+  "type": "object",
+  "title": "Blog Post",
+  "description": "A blog post in the content management system",
+  "properties": {
+    "id": {
+      "type": "integer",
+      "title": "Post ID",
+      "description": "Unique identifier for the blog post",
+      "readOnly": true
+    },
+    "title": {
+      "type": "string",
+      "title": "Post Title",
+      "description": "The title of the blog post",
+      "minLength": 1,
+      "maxLength": 200,
+      "examples": [
+        "Getting Started with JSON Schema",
+        "Advanced Validation Techniques"
+      ]
+    },
+    "content": {
+      "type": "string",
+      "title": "Post Content",
+      "description": "The main content of the blog post in Markdown format",
+      "contentMediaType": "text/markdown"
+    },
+    "status": {
+      "type": "string",
+      "title": "Publication Status",
+      "description": "Current publication status of the post",
+      "enum": ["draft", "published", "archived"],
+      "default": "draft"
+    },
+    "authorId": {
+      "type": "integer",
+      "title": "Author ID",
+      "description": "ID of the user who created this post",
+      "readOnly": true
+    },
+    "publishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Publication Date",
+      "description": "Date and time when the post was published",
+      "readOnly": true
+    },
+    "tags": {
+      "type": "array",
+      "title": "Tags",
+      "description": "Tags for categorizing the post",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "examples": [
+        ["tutorial", "json-schema"],
+        ["guide", "validation"]
+      ]
+    },
+    "legacySlug": {
+      "type": "string",
+      "title": "Legacy URL Slug",
+      "deprecated": true,
+      "description": "Old URL slug format. Use 'slug' field instead. Will be removed in v3.0"
+    }
+  },
+  "required": ["title", "content"],
+  "examples": [
+    {
+      "id": 1,
+      "title": "Introduction to JSON Schema",
+      "content": "# JSON Schema\n\nJSON Schema is...",
+      "status": "published",
+      "authorId": 42,
+      "publishedAt": "2026-03-03T10:00:00Z",
+      "tags": ["tutorial", "beginner"]
+    }
+  ]
+}
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="API Documentation" icon="book">
+    Generate comprehensive API documentation from schemas with titles, descriptions, and examples
+  </Card>
+  
+  <Card title="Form Generation" icon="window">
+    Build user interfaces that respect readOnly/writeOnly semantics and provide helpful labels
+  </Card>
+  
+  <Card title="Code Generation" icon="code">
+    Generate model classes with appropriate access modifiers based on read/write semantics
+  </Card>
+  
+  <Card title="Validation Messages" icon="message">
+    Provide user-friendly error messages using titles and descriptions
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+1. **Always include descriptions**: Make schemas self-documenting with clear, concise descriptions
+
+2. **Use titles for UI labels**: Provide short, user-friendly titles for form field labels
+
+3. **Validate defaults**: Ensure default values actually validate against the schema
+
+4. **Provide realistic examples**: Use examples that demonstrate actual, valid use cases
+
+5. **Mark sensitive fields writeOnly**: Always use `writeOnly: true` for passwords and secrets
+
+6. **Document deprecated features**: When deprecating, explain what to use instead and when removal is planned
+
+7. **Be consistent**: Use annotation keywords consistently across your API schemas
+
+## Related Topics
+
+- [Structural Validation](/specification/validation/structural-validation) - Type and structural constraints
+- [Format Validation](/specification/validation/format) - Semantic format validation
+- [Content Validation](/specification/validation/content) - String-encoded data keywords

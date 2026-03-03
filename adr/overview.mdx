@@ -1,0 +1,70 @@
+---
+title: Architectural Decision Records
+description: Overview of key architectural decisions for the JSON Schema specification
+---
+
+# Architectural Decision Records (ADRs)
+
+This section documents the architectural decisions for the JSON Schema specification. ADRs provide context about why certain design choices were made and help maintain consistency as the project evolves.
+
+## What are ADRs?
+
+Architectural Decision Records (ADRs) are documents that capture important architectural decisions made along with their context and consequences. Each ADR describes:
+
+- The context and problem being addressed
+- The decision drivers that influenced the choice
+- The options that were considered
+- The final decision and its rationale
+- The positive and negative consequences
+
+For more information about ADRs in general, visit [adr.github.io](https://adr.github.io/).
+
+## Key Decisions
+
+Below are the major architectural decisions that have shaped JSON Schema:
+
+### Process and Governance
+
+- **[Decoupling from IETF](./decouple-from-ietf)** (September 2022)
+  - Decision to decouple from IETF standards process and develop an independent specification development lifecycle
+  - Enables greater flexibility in versioning and evolution while maintaining production readiness
+
+- **[Stable Specification Process](./stable-spec)** (November 2022)
+  - Adoption of a TC39-inspired stability model with mutable specifications
+  - Features progress through stability levels before becoming stable with compatibility guarantees
+  - Annual releases with year-based versioning (e.g., 2024)
+
+### Feature Decisions
+
+- **Single-Value Annotations (SVA) Prefix** (April 2023)
+  - Introduction of the `x-` prefix convention for custom annotation keywords
+  - Provides a way to include custom data in schemas while maintaining stability guarantees
+  - Familiar pattern from other specifications (OpenAPI, HTTP headers)
+
+- **Object Contains** (November 2023)
+  - Decision to keep `contains` keyword for arrays only
+  - Reverted earlier decision to extend `contains` to objects to avoid breaking changes
+  - Future object-specific keywords may be introduced instead
+
+- **Format as Assertion** (November 2024, Proposed)
+  - Proposal to make `format` an assertion keyword by default instead of annotation-only
+  - Aligns with user expectations that format values should be validated
+  - Requires implementations to support standard format values or refuse unknown formats
+
+## Impact on JSON Schema
+
+These architectural decisions have fundamentally shaped JSON Schema's direction:
+
+1. **Stability First**: The move to a stable specification model means schemas written today will continue to work with future versions without modification.
+
+2. **Independent Evolution**: Decoupling from IETF allows JSON Schema to evolve at its own pace while maintaining production readiness.
+
+3. **Clear Extension Points**: The `x-` prefix and other mechanisms provide clear ways to extend schemas without conflicting with future standard keywords.
+
+4. **User-Centric Design**: Decisions like making `format` an assertion reflect responsiveness to community feedback and actual usage patterns.
+
+## Contributing to ADRs
+
+The JSON Schema community follows a structured process for making architectural decisions. If you're interested in proposing changes or understanding past decisions, visit the [ADR directory in the specification repository](https://github.com/json-schema-org/json-schema-spec/tree/main/adr).
+
+New ADRs use the [MADR format](https://adr.github.io/madr/) to ensure consistency and completeness.

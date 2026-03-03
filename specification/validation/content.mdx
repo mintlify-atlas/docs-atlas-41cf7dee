@@ -1,0 +1,415 @@
+---
+title: "Content Validation"
+description: "Keywords for handling string-encoded data including contentEncoding, contentMediaType, and contentSchema"
+---
+
+## Overview
+
+The content keywords indicate that an instance contains non-JSON data encoded in a JSON string. These properties provide additional information required to interpret JSON data as rich multimedia documents by describing the type of content, how it is encoded, and/or how it may be validated.
+
+<Warning>
+Content keywords do **not** function as validation assertions. A malformed string-encoded document MUST NOT cause the containing instance to be considered invalid. These keywords are purely annotations.
+</Warning>
+
+## Purpose
+
+Content keywords are designed to:
+
+- Describe binary data encoded as strings (e.g., base64-encoded images)
+- Specify the media type of string content (e.g., HTML, JSON, XML)
+- Provide a schema for validating decoded content
+- Enable applications to properly handle embedded data
+
+## Implementation Requirements
+
+<Info>
+Due to security and performance concerns, as well as the open-ended nature of possible content types, implementations MUST NOT automatically decode, parse, and/or validate the string contents.
+</Info>
+
+Applications are expected to:
+
+1. Read the content annotations from the schema
+2. Use these annotations to invoke appropriate libraries separately
+3. Handle decoding, parsing, and validation explicitly when needed
+
+All keywords in this section:
+- Apply **only to strings**
+- Have no effect on other data types
+- Produce annotations, not assertions
+
+## Keywords
+
+### `contentEncoding`
+
+Defines how binary data is encoded in a string.
+
+**Value**: String
+
+If the instance value is a string, this property defines that the string SHOULD be interpreted as encoded binary data. Applications wishing to decode it SHOULD do so using the encoding named by this property.
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64"
+}
+```
+
+#### Common Encoding Values
+
+<AccordionGroup>
+  <Accordion title="base64">
+    Base64 encoding as defined in RFC 4648. This is the most common encoding for binary data in JSON.
+    
+    **Use case**: Images, PDFs, binary files
+    
+    **Example**:
+    ```json
+    "iVBORw0KGgoAAAANSUhEUgAAAAUA..."
+    ```
+  </Accordion>
+  
+  <Accordion title="base32">
+    Base32 encoding as defined in RFC 4648.
+    
+    **Use case**: Case-insensitive encoding needs
+  </Accordion>
+  
+  <Accordion title="base16">
+    Base16 (hexadecimal) encoding as defined in RFC 4648.
+    
+    **Use case**: Hexadecimal data representation
+  </Accordion>
+  
+  <Accordion title="quoted-printable">
+    Quoted-printable encoding from RFC 2045, sections 6.7.
+    
+    **Use case**: MIME email content
+  </Accordion>
+  
+  <Accordion title="7bit, 8bit, binary">
+    MIME transfer encodings from RFC 2045, section 6.8.
+    
+    **Use case**: MIME context
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+As "base64" is defined in both RFC 4648 and RFC 2045, the definition from RFC 4648 SHOULD be assumed unless the string is specifically intended for use in a MIME context.
+</Note>
+
+#### Identity Encoding
+
+If `contentEncoding` is absent but `contentMediaType` is present, this indicates that the encoding is the **identity encoding** (no transformation was needed to represent the content in a UTF-8 string).
+
+<Info>
+All encoding values defined in the RFCs result in strings consisting only of 7-bit ASCII characters. Therefore, `contentEncoding` has no meaning for strings containing characters outside of that range.
+</Info>
+
+### `contentMediaType`
+
+Indicates the media type (MIME type) of the string contents.
+
+**Value**: String (must be a valid media type)
+
+**Standard**: RFC 2046
+
+If the instance is a string, this property indicates the media type of the contents. If `contentEncoding` is present, this property describes the **decoded** string.
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json"
+}
+```
+
+#### Common Media Types
+
+<CardGroup cols={2}>
+  <Card title="text/html" icon="code">
+    HTML content
+  </Card>
+  
+  <Card title="application/json" icon="brackets-curly">
+    JSON data
+  </Card>
+  
+  <Card title="application/xml" icon="file-code">
+    XML data
+  </Card>
+  
+  <Card title="image/png" icon="image">
+    PNG image
+  </Card>
+  
+  <Card title="image/jpeg" icon="image">
+    JPEG image
+  </Card>
+  
+  <Card title="application/pdf" icon="file-pdf">
+    PDF document
+  </Card>
+  
+  <Card title="application/jwt" icon="key">
+    JSON Web Token
+  </Card>
+  
+  <Card title="text/csv" icon="table">
+    CSV data
+  </Card>
+</CardGroup>
+
+### `contentSchema`
+
+Describes the structure of the decoded string content.
+
+**Value**: Valid JSON Schema
+
+If the instance is a string, and if `contentMediaType` is present, this keyword's subschema describes the structure of the string.
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json",
+  "contentSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string" },
+      "age": { "type": "integer" }
+    },
+    "required": ["name"]
+  }
+}
+```
+
+#### Requirements
+
+- This keyword MAY be used with any media type that can be mapped into JSON Schema's data model
+- Specifying such mappings is outside the scope of this specification
+- The subschema is produced as an **annotation**
+- `contentSchema` SHOULD NOT produce an annotation if `contentMediaType` is not present
+
+<Warning>
+Evaluating the `contentSchema` subschema in-place (as part of its parent schema) will ensure correct processing. Independent use of the extracted subschema is only safe if the subschema is an embedded resource which defines both a `$schema` and an absolute IRI `$id`.
+</Warning>
+
+## Examples
+
+### Base64-Encoded Image
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64",
+  "contentMediaType": "image/png"
+}
+```
+
+Instances described by this schema are expected to be strings whose values should be interpretable as base64-encoded PNG images.
+
+**Example instance**:
+```json
+"iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAHElEQVQI12P4//8/w38GIAXDIBKE0DHxgljNBAAO9TXL0Y4OHwAAAABJRU5ErkJggg=="
+```
+
+### HTML Content
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "text/html"
+}
+```
+
+Instances described by this schema are expected to be strings containing HTML, using whatever character set the JSON string was decoded into. Per section 8.1 of RFC 8259, outside of an entirely closed system, this MUST be UTF-8.
+
+**Example instance**:
+```json
+"<html><body><h1>Hello World</h1></body></html>"
+```
+
+### Embedded JSON
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/json",
+  "contentSchema": {
+    "type": "object",
+    "properties": {
+      "id": { "type": "integer" },
+      "name": { "type": "string" }
+    },
+    "required": ["id", "name"]
+  }
+}
+```
+
+**Example instance**:
+```json
+"{\"id\": 123, \"name\": \"John Doe\"}"
+```
+
+### JWT with Schema
+
+This example describes a JWT that is MACed using the HMAC SHA-256 algorithm, and requires the "iss" and "exp" fields in its claim set.
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "application/jwt",
+  "contentSchema": {
+    "type": "array",
+    "minItems": 2,
+    "prefixItems": [
+      {
+        "const": {
+          "typ": "JWT",
+          "alg": "HS256"
+        }
+      },
+      {
+        "type": "object",
+        "required": ["iss", "exp"],
+        "properties": {
+          "iss": { "type": "string" },
+          "exp": { "type": "integer" }
+        }
+      }
+    ]
+  }
+}
+```
+
+<Note>
+`contentEncoding` does not appear in this example. While the `application/jwt` media type uses base64url encoding, that is defined by the media type itself, which determines how the JWT string is decoded into a list of two JSON data structures: first the header, and then the payload. Since the JWT media type ensures that the JWT can be represented in a JSON string, there is no need for further encoding or decoding.
+</Note>
+
+### Base64-Encoded PDF
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64",
+  "contentMediaType": "application/pdf"
+}
+```
+
+### CSV Data
+
+```json
+{
+  "type": "string",
+  "contentMediaType": "text/csv"
+}
+```
+
+**Example instance**:
+```json
+"name,age,city\nJohn,30,New York\nJane,25,Boston"
+```
+
+### Base64-Encoded Binary File
+
+```json
+{
+  "type": "string",
+  "contentEncoding": "base64",
+  "contentMediaType": "application/octet-stream"
+}
+```
+
+## Complete Example: File Upload Schema
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "filename": {
+      "type": "string"
+    },
+    "mimeType": {
+      "type": "string",
+      "pattern": "^[a-z]+/[a-z0-9\\-\\+\\.]+$"
+    },
+    "data": {
+      "type": "string",
+      "contentEncoding": "base64",
+      "contentMediaType": "application/octet-stream",
+      "description": "Base64-encoded file data"
+    },
+    "metadata": {
+      "type": "string",
+      "contentMediaType": "application/json",
+      "contentSchema": {
+        "type": "object",
+        "properties": {
+          "author": { "type": "string" },
+          "created": { "type": "string", "format": "date-time" },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "required": ["filename", "data"]
+}
+```
+
+## Security Considerations
+
+<Warning>
+Implementations that support validating or otherwise evaluating instance string data based on `contentEncoding` and/or `contentMediaType` are at risk of evaluating data in an unsafe way based on misleading information.
+</Warning>
+
+Applications can mitigate this risk by:
+
+- Only performing processing when a relationship between the schema and instance is established (e.g., they share the same authority)
+- Validating the decoded content in a sandboxed environment
+- Setting appropriate resource limits for decoding operations
+- Being aware of the security considerations of the specific media type or encoding being processed
+
+**Example**: The security considerations of RFC 4329 (Scripting Media Types) apply when processing JavaScript or ECMAScript encoded within a JSON string.
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="File Upload APIs">
+    APIs that accept file uploads as base64-encoded strings can use content keywords to specify the expected encoding and media type.
+  </Accordion>
+  
+  <Accordion title="Embedded Documents">
+    Systems that store HTML, XML, or other documents as JSON strings can use content keywords to indicate the document type.
+  </Accordion>
+  
+  <Accordion title="Binary Data Storage">
+    Applications storing binary data (images, PDFs, etc.) as base64 strings can document the encoding format.
+  </Accordion>
+  
+  <Accordion title="Nested JSON">
+    Systems with JSON strings containing other JSON data can use `contentSchema` to validate the nested structure.
+  </Accordion>
+  
+  <Accordion title="JWT Validation">
+    APIs using JWTs can specify the expected JWT structure and claims using content keywords.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+1. **Always specify media type**: When using `contentEncoding`, also include `contentMediaType` to fully describe the data
+
+2. **Use standard encodings**: Prefer well-known encodings like base64 over custom encoding schemes
+
+3. **Document behavior**: Clearly document how your application handles content keywords
+
+4. **Validate separately**: Perform content validation separately from schema validation
+
+5. **Consider size limits**: Set appropriate limits on encoded data size to prevent resource exhaustion
+
+## Related Topics
+
+- [Format Validation](/specification/validation/format) - Semantic format validation
+- [Annotation Keywords](/specification/validation/annotations) - Meta-data keywords
+- [Structural Validation](/specification/validation/structural-validation) - Type and structural constraints

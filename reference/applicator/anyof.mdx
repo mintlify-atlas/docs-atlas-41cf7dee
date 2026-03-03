@@ -1,0 +1,193 @@
+---
+title: anyOf
+description: Validate against at least one of the specified schemas
+---
+
+The `anyOf` keyword validates an instance against one or more schemas from its array value. This enables flexible validation where an instance can satisfy different schema alternatives.
+
+## Syntax
+
+```json
+{
+  "anyOf": [
+    { /* schema 1 */ },
+    { /* schema 2 */ },
+    { /* schema 3 */ }
+  ]
+}
+```
+
+The value must be a non-empty array where each item is a valid JSON Schema.
+
+## Behavior
+
+An instance validates successfully against `anyOf` if it validates successfully against **at least one** schema in the array.
+
+- All subschemas are evaluated independently
+- At least one subschema must succeed
+- If all subschemas fail, the entire `anyOf` fails
+- When collecting annotations, **all** subschemas must be examined to collect annotations from each that validates successfully
+
+## Examples
+
+### Multiple Type Options
+
+Accept either a string or a number:
+
+```json
+{
+  "anyOf": [
+    { "type": "string" },
+    { "type": "number" }
+  ]
+}
+```
+
+Valid: `"hello"`, `42`, `3.14`  
+Invalid: `true`, `null`, `[]`
+
+### Alternative Object Structures
+
+Accept objects with different required properties:
+
+```json
+{
+  "anyOf": [
+    {
+      "properties": {
+        "email": { "type": "string", "format": "email" }
+      },
+      "required": ["email"]
+    },
+    {
+      "properties": {
+        "phone": { "type": "string" }
+      },
+      "required": ["phone"]
+    }
+  ]
+}
+```
+
+Valid instances:
+```json
+{ "email": "user@example.com" }
+{ "phone": "+1-555-0123" }
+{ "email": "user@example.com", "phone": "+1-555-0123" }
+```
+
+Invalid: `{}`, `{ "name": "John" }`
+
+### Conditional Formats
+
+Accept different string formats:
+
+```json
+{
+  "type": "string",
+  "anyOf": [
+    { "format": "email" },
+    { "format": "uri" },
+    { "format": "uuid" }
+  ]
+}
+```
+
+Valid: `"user@example.com"`, `"https://example.com"`, `"550e8400-e29b-41d4-a716-446655440000"`
+
+### Flexible Numeric Ranges
+
+Accept numbers in different valid ranges:
+
+```json
+{
+  "type": "number",
+  "anyOf": [
+    {
+      "minimum": 0,
+      "maximum": 10
+    },
+    {
+      "minimum": 90,
+      "maximum": 100
+    }
+  ]
+}
+```
+
+Valid: `5`, `0`, `10`, `95`, `100`  
+Invalid: `50`, `-5`, `105`
+
+### Polymorphic Data Structures
+
+Accept different data structure variations:
+
+```json
+{
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "user" },
+        "username": { "type": "string" }
+      },
+      "required": ["type", "username"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "admin" },
+        "adminId": { "type": "integer" },
+        "permissions": { "type": "array" }
+      },
+      "required": ["type", "adminId", "permissions"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "type": { "const": "guest" }
+      },
+      "required": ["type"]
+    }
+  ]
+}
+```
+
+Valid instances:
+```json
+{ "type": "user", "username": "john_doe" }
+{ "type": "admin", "adminId": 42, "permissions": ["read", "write"] }
+{ "type": "guest" }
+```
+
+### Nullable Values
+
+Accept a specific type or null:
+
+```json
+{
+  "anyOf": [
+    { "type": "string", "minLength": 1 },
+    { "type": "null" }
+  ]
+}
+```
+
+Valid: `"hello"`, `null`  
+Invalid: `""` (empty string), `42`
+
+## Common Use Cases
+
+- **Union types**: Allow multiple type alternatives
+- **Optional formats**: Accept data in various valid formats
+- **Polymorphic objects**: Support different object shapes based on discriminator fields
+- **Fallback validation**: Provide alternative validation paths
+- **Flexible APIs**: Accept multiple valid request/response formats
+
+## Notes
+
+- When collecting annotations, all subschemas must be examined, even after finding one that validates successfully
+- This differs from short-circuit evaluation possible with pure assertion validation
+- `anyOf` requires at least one match, unlike `oneOf` which requires exactly one
+- Performance consideration: nested `anyOf` can lead to exponential evaluation paths
+- Empty arrays are not permitted

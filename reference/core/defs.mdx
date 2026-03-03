@@ -1,0 +1,290 @@
+---
+title: $defs
+description: Reserves a location for reusable schema definitions
+---
+
+The `$defs` keyword reserves a location for schema authors to inline reusable JSON Schemas into a more general schema. The keyword does not directly affect validation results.
+
+## Syntax
+
+<ParamField path="$defs" type="object" required>
+  An object where each property value MUST be a valid JSON Schema. Property names are arbitrary identifiers chosen by the schema author.
+</ParamField>
+
+## Purpose
+
+The `$defs` keyword provides:
+
+1. **Schema Organization**: A standard location for reusable schema components
+2. **Reference Target**: Schemas that can be referenced with `$ref`
+3. **Documentation**: Groups related definitions together for readability
+4. **Reserved Location**: Ensures this location won't be redefined by extension keywords
+
+## Usage
+
+### Basic Example
+
+```json
+{
+  "type": "array",
+  "items": { "$ref": "#/$defs/positiveInteger" },
+  "$defs": {
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}
+```
+
+The schema defines an array of positive integers. The positive integer constraint is defined once in `$defs` and referenced by the `items` keyword.
+
+### Multiple Definitions
+
+```json
+{
+  "$id": "https://example.com/schemas/user.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "email": { "$ref": "#/$defs/email" },
+    "billing_address": { "$ref": "#/$defs/address" },
+    "shipping_address": { "$ref": "#/$defs/address" }
+  },
+  "$defs": {
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "state": { "type": "string" },
+        "zip": { "type": "string" }
+      },
+      "required": ["street", "city", "state", "zip"]
+    }
+  }
+}
+```
+
+The `address` schema is reused for both billing and shipping addresses.
+
+## Examples
+
+### Complex Schema with Nested Definitions
+
+```json
+{
+  "$id": "https://example.com/product.json",
+  "type": "object",
+  "properties": {
+    "id": { "$ref": "#/$defs/identifier" },
+    "name": { "type": "string" },
+    "price": { "$ref": "#/$defs/price" },
+    "dimensions": { "$ref": "#/$defs/dimensions" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["id", "name", "price"],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-[0-9]{6}$"
+    },
+    "price": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "enum": ["USD", "EUR", "GBP", "JPY"]
+        }
+      },
+      "required": ["amount", "currency"]
+    },
+    "dimensions": {
+      "type": "object",
+      "properties": {
+        "length": { "$ref": "#/$defs/positiveNumber" },
+        "width": { "$ref": "#/$defs/positiveNumber" },
+        "height": { "$ref": "#/$defs/positiveNumber" },
+        "unit": {
+          "type": "string",
+          "enum": ["cm", "in"]
+        }
+      },
+      "required": ["length", "width", "height", "unit"]
+    },
+    "positiveNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  }
+}
+```
+
+This example shows definitions referencing other definitions (`dimensions` references `positiveNumber`).
+
+### Recursive Schema
+
+```json
+{
+  "$id": "https://example.com/tree.json",
+  "$ref": "#/$defs/node",
+  "$defs": {
+    "node": {
+      "type": "object",
+      "properties": {
+        "value": { "type": "number" },
+        "left": { "$ref": "#/$defs/node" },
+        "right": { "$ref": "#/$defs/node" }
+      },
+      "required": ["value"]
+    }
+  }
+}
+```
+
+The `node` definition references itself to create a binary tree structure.
+
+### Embedded Schema Resources in $defs
+
+```json
+{
+  "$id": "https://example.com/main.json",
+  "type": "object",
+  "properties": {
+    "person": { "$ref": "person.json" }
+  },
+  "$defs": {
+    "embeddedPerson": {
+      "$id": "person.json",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "age": { "type": "integer" }
+      }
+    }
+  }
+}
+```
+
+The embedded schema has its own `$id` and can be referenced as `person.json`. This is useful for bundling multiple schema resources into a single document.
+
+## Referencing Definitions
+
+### JSON Pointer Syntax
+
+Definitions in `$defs` are referenced using JSON Pointer syntax:
+
+```json
+{
+  "$ref": "#/$defs/definitionName"
+}
+```
+
+- `#` refers to the current document root
+- `/$defs/` navigates to the `$defs` object
+- `/definitionName` selects the specific definition
+
+### External References
+
+Definitions can be referenced from other schema documents:
+
+```json
+{
+  "$ref": "https://example.com/common.json#/$defs/address"
+}
+```
+
+This references the `address` definition in the external `common.json` schema.
+
+## Validation Behavior
+
+The `$defs` keyword itself does not affect validation:
+
+```json
+{
+  "type": "string",
+  "$defs": {
+    "unused": {
+      "type": "number"
+    }
+  }
+}
+```
+
+In this example, the instance is validated only against `"type": "string"`. The `unused` definition in `$defs` has no effect unless referenced.
+
+## Naming Conventions
+
+While property names in `$defs` are arbitrary, common conventions include:
+
+- **camelCase**: `positiveInteger`, `emailAddress`
+- **PascalCase**: `PositiveInteger`, `EmailAddress`  
+- **snake_case**: `positive_integer`, `email_address`
+- **Descriptive names**: Use clear, meaningful names that describe the schema's purpose
+
+## Comparison with Previous Versions
+
+In older JSON Schema drafts, `definitions` was used instead of `$defs`:
+
+```json
+// Draft-07 and earlier
+{
+  "definitions": {
+    "address": { "type": "object" }
+  }
+}
+
+// Draft 2019-09 and later
+{
+  "$defs": {
+    "address": { "type": "object" }
+  }
+}
+```
+
+The `$` prefix was added to align with other core keywords and emphasize its reserved status.
+
+## Bundling Schemas
+
+The `$defs` keyword is the RECOMMENDED location for bundling external schema resources into a compound document:
+
+```json
+{
+  "$id": "https://example.com/bundle.json",
+  "type": "object",
+  "properties": {
+    "user": { "$ref": "user.json" },
+    "product": { "$ref": "product.json" }
+  },
+  "$defs": {
+    "bundledUser": {
+      "$id": "user.json",
+      "type": "object"
+    },
+    "bundledProduct": {
+      "$id": "product.json",
+      "type": "object"
+    }
+  }
+}
+```
+
+The keys in `$defs` (like `bundledUser`) are for organization and don't affect references, which use the embedded `$id` values.
+
+## Related Keywords
+
+- [`$ref`](/reference/core/ref) - References schemas defined in `$defs`
+- [`$id`](/reference/core/id) - Can be used within definitions to create embedded resources
+- [`$anchor`](/specification/core/fragment-identifiers) - Alternative way to create reference targets
